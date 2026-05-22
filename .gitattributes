@@ -1,0 +1,17 @@
+# Normalize line endings
+* text=auto
+
+# Shell scripts must be LF (GitHub Actions runs on Linux)
+*.sh text eol=lf
+gradlew text eol=lf
+
+# Batch files stay CRLF on Windows
+*.bat text eol=crlf
+gradlew.bat text eol=crlf
+
+# Binary files
+*.jar binary
+*.png binary
+*.ico binary
+*.jpg binary
+*.keystore binary
