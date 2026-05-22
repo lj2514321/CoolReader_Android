@@ -1,6 +1,6 @@
 # CoolReader Android
 
-[![Build APK](https://github.com/YOUR_USERNAME/CoolReader_android/actions/workflows/build.yml/badge.svg)](https://github.com/YOUR_USERNAME/CoolReader_android/actions/workflows/build.yml)
+[![Build APK](https://github.com/lj2514321/CoolReader_android/actions/workflows/build.yml/badge.svg)](https://github.com/lj2514321/CoolReader_android/actions/workflows/build.yml)
 
 A minimal EPUB reader built with **React 18 + TypeScript + Vite**, wrapped as a native Android app via **Capacitor 8**. The app uses **epubjs** for EPUB rendering and **IndexedDB** for all local persistence.
 
@@ -103,7 +103,7 @@ Pushing a tag like `v1.0.0` additionally creates a GitHub Release with the APK a
 
 ### Download latest APK
 
-1. Go to [Actions](https://github.com/YOUR_USERNAME/CoolReader_android/actions)
+1. Go to [Actions](https://github.com/lj2514321/CoolReader_android/actions)
 2. Click the latest successful workflow run
 3. Download the `coolreader-debug` artifact
 4. Install `app-debug.apk` on your Android device
