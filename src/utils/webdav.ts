@@ -1,4 +1,10 @@
 import type { WebDAVConfig, SyncProgressEvent } from '../types'
+
+// WebDAV client interface (minimal, for progress sync)
+interface WebDAVClient {
+  putFileContents(path: string, data: string | ArrayBuffer, options?: { contentType?: string }): Promise<void>
+  getFileContents(path: string, options?: { format?: 'text' | 'arraybuffer' }): Promise<string | ArrayBuffer>
+}
 import { loadBookData, saveBook, saveBookData } from './db'
 import ePub from 'epubjs'
 
@@ -85,6 +91,67 @@ export async function deleteRemote(config: WebDAVConfig, filename: string): Prom
     headers: { Authorization: authHeader(config) },
   })
   if (!res.ok) throw new Error(`删除失败 (${res.status})`)
+}
+
+// Progress sync throttle (ms)
+const PROGRESS_SYNC_INTERVAL = 5 * 60 * 1000 // 5 minutes
+
+interface ReadingProgress {
+  cfi: string
+  percentage: number
+  timestamp: number
+}
+
+interface SyncResult {
+  success: boolean
+  error?: string
+}
+
+// Store last sync time in memory (not persisted - intentional)
+const lastSyncTime = new Map<string, number>()
+
+export async function syncProgressToWebDAV(
+  client: WebDAVClient,
+  filePath: string,
+  progress: ReadingProgress
+): Promise<SyncResult> {
+  // Check throttle
+  const now = Date.now()
+  const lastSync = lastSyncTime.get(filePath) || 0
+  if (now - lastSync < PROGRESS_SYNC_INTERVAL) {
+    return { success: true } // Skipped, not an error
+  }
+
+  const progressPath = `.coolreader/progress/${getBookId(filePath)}.json`
+
+  try {
+    await client.putFileContents(progressPath, JSON.stringify(progress), {
+      contentType: 'application/json',
+    })
+    lastSyncTime.set(filePath, now)
+    return { success: true }
+  } catch (e) {
+    return { success: false, error: String(e) }
+  }
+}
+
+export async function fetchProgressFromWebDAV(
+  client: WebDAVClient,
+  filePath: string
+): Promise<ReadingProgress | null> {
+  const progressPath = `.coolreader/progress/${getBookId(filePath)}.json`
+
+  try {
+    const content = await client.getFileContents(progressPath, { format: 'text' })
+    return JSON.parse(content as string) as ReadingProgress
+  } catch {
+    return null // No progress saved yet
+  }
+}
+
+function getBookId(filePath: string): string {
+  // Use filename without extension as book ID
+  return filePath.split('/').pop()?.replace(/\.[^.]+$/, '') || 'unknown'
 }
 
 async function uploadProgressData(config: WebDAVConfig, filename: string, data: any): Promise<void> {

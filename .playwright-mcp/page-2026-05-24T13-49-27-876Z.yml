@@ -1,0 +1,118 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic:
+      - generic:
+        - generic:
+          - generic: ⏱
+          - generic:
+            - generic: 0h 0m
+            - generic: 今日阅读
+        - generic:
+          - textbox "搜索书名或作者…"
+        - generic:
+          - button "书名"
+          - button "作者"
+          - button "最近"
+        - generic:
+          - generic:
+            - generic: 📚
+            - paragraph: 还没有书
+            - paragraph: 选择 EPUB 文件开始阅读
+            - button "📥 导入书籍"
+    - generic [ref=e38]:
+      - paragraph [ref=e39]: 📊 阅读统计
+      - generic [ref=e40]:
+        - generic [ref=e41]:
+          - generic [ref=e42]: 📖
+          - generic [ref=e43]: 0m
+          - generic [ref=e44]: 今日
+        - generic [ref=e45]:
+          - generic [ref=e46]: 📊
+          - generic [ref=e47]: 0m
+          - generic [ref=e48]: 本周
+        - generic [ref=e49]:
+          - generic [ref=e50]: 📅
+          - generic [ref=e51]: 0m
+          - generic [ref=e52]: 本月
+        - generic [ref=e53]:
+          - generic [ref=e54]: ⏱
+          - generic [ref=e55]: 0m
+          - generic [ref=e56]: 总计
+      - generic [ref=e57]:
+        - generic [ref=e58]: 近 14 天
+        - generic [ref=e59]:
+          - generic [ref=e62]: 05-11
+          - generic [ref=e65]: 05-12
+          - generic [ref=e68]: 05-13
+          - generic [ref=e71]: 05-14
+          - generic [ref=e74]: 05-15
+          - generic [ref=e77]: 05-16
+          - generic [ref=e80]: 05-17
+          - generic [ref=e83]: 05-18
+          - generic [ref=e86]: 05-19
+          - generic [ref=e89]: 05-20
+          - generic [ref=e92]: 05-21
+          - generic [ref=e95]: 05-22
+          - generic [ref=e98]: 05-23
+          - generic [ref=e101]: 05-24
+      - generic [ref=e103]:
+        - generic [ref=e104]:
+          - generic [ref=e105]:
+            - generic [ref=e106]: 🔥
+            - generic [ref=e107]: "当前连击: 0天"
+          - generic [ref=e108]:
+            - generic [ref=e109]: 🏆
+            - generic [ref=e110]: "最长连击: 0天"
+        - generic [ref=e111]:
+          - generic [ref=e112]: 📭
+          - generic [ref=e113]: 还没有阅读记录
+    - generic:
+      - generic:
+        - paragraph: 设置
+        - generic:
+          - generic:
+            - generic: 首页背景
+            - generic: 深紫
+          - generic: ›
+        - generic:
+          - generic:
+            - generic: 启动行为
+            - generic: 显示书架
+          - generic: ›
+        - generic:
+          - generic:
+            - generic: 阅读目标
+            - generic: 未设置
+          - generic: ›
+        - generic:
+          - generic:
+            - generic: WebDAV 同步
+          - generic: ›
+        - generic:
+          - generic:
+            - generic: AI 助手
+          - generic: ›
+        - generic:
+          - generic: 导出笔记
+          - generic:
+            - button "Markdown"
+            - button "TXT"
+        - generic:
+          - generic: 备份恢复
+          - generic:
+            - button "导出备份"
+            - generic: 导入备份
+        - generic:
+          - generic: WebDAV 同步
+          - generic:
+            - button "立即同步"
+  - generic [ref=e26]:
+    - button "📚 书架" [ref=e27] [cursor=pointer]:
+      - generic [ref=e28]: 📚
+      - generic [ref=e29]: 书架
+    - button "📊 统计" [active] [ref=e30] [cursor=pointer]:
+      - generic [ref=e31]: 📊
+      - generic [ref=e32]: 统计
+    - button "⚙ 设置" [ref=e33] [cursor=pointer]:
+      - generic [ref=e34]: ⚙
+      - generic [ref=e35]: 设置

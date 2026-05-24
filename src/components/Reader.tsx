@@ -120,6 +120,8 @@ export function Reader({
   const [searching, setSearching] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [showCustomTheme, setShowCustomTheme] = useState(false)
+  const [brightness, setBrightness] = useState(100)
+  const [showBrightness, setShowBrightness] = useState(false)
   const [localCustomTheme, setLocalCustomTheme] = useState<CustomTheme>(customTheme ?? defaultCustomTheme)
   const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const wheelTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -212,7 +214,7 @@ export function Reader({
 
   return (
     <div ref={containerRef} style={{ height: '100%', background: themeBg[theme], overflow: 'hidden', position: 'relative' }}>
-      <div id="viewer" style={{ position: 'absolute', inset: 0 }} />
+      <div id="viewer" style={{ position: 'absolute', inset: 0, filter: `brightness(${brightness / 100})`, transition: 'filter 0.2s' }} />
       <div
         onClick={handleViewerClick}
         onKeyDown={e => {
@@ -273,6 +275,14 @@ export function Reader({
               opacity: 1,
             }}
           >🔍</button>
+          <button onClick={(e) => { e.stopPropagation(); setShowBrightness(v => !v) }}
+            style={{
+              ...btn(fg), padding: '7px 10px', fontSize: 15,
+              background: showBrightness ? 'rgba(99,102,241,0.3)' : 'transparent',
+              opacity: 1,
+            }}
+            title="亮度"
+          >☀️</button>
           <button onClick={(e) => { e.stopPropagation(); setShowMarkers(v => !v) }} style={btn(fg)}>📑</button>
           <button onClick={(e) => { e.stopPropagation(); setShowAa(v => !v) }} style={btn(fg)}>Aa</button>
         </div>
@@ -418,6 +428,28 @@ export function Reader({
             </div>
           </div>
         </>
+      )}
+
+      {showBrightness && (
+        <div onClick={e => e.stopPropagation()} style={{
+          position: 'absolute', top: 80, right: 16, zIndex: 10,
+          background: 'rgba(0,0,0,0.85)',
+          borderRadius: 12, padding: '16px 12px',
+          display: 'flex', flexDirection: 'column', gap: 8, minWidth: 160,
+        }}>
+          <div style={{ color: '#fff', fontSize: 12, textAlign: 'center' }}>亮度</div>
+          <input
+            type="range"
+            min="20"
+            max="200"
+            value={brightness}
+            onChange={(e) => setBrightness(Number(e.target.value))}
+            style={{ width: 140, accentColor: '#a855f7' }}
+          />
+          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, textAlign: 'center' }}>
+            {brightness}%
+          </div>
+        </div>
       )}
 
       {showCustomTheme && (

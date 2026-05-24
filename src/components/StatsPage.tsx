@@ -1,6 +1,9 @@
-import { useState, useEffect, useMemo } from 'react'
+﻿import { useState, useEffect, useMemo } from 'react'
 import { loadReadingTimeRange, loadBookReadingTimeRange } from '../utils/db'
 import type { BookRecord } from '../utils/db'
+import { calcStreak } from '../utils/streak'
+import { StreakHeatmap } from './StreakHeatmap'
+import type { ReadingTimeRecord } from '../utils/streak'
 
 interface StatsPageProps {
   books: BookRecord[]
@@ -25,6 +28,7 @@ function formatShort(seconds: number): string {
 export function StatsPage({ books, readingTime, readingGoal }: StatsPageProps) {
   const [records, setRecords] = useState<{ date: string; seconds: number }[]>([])
   const [bookRecords, setBookRecords] = useState<{ filePath: string; date: string; seconds: number }[]>([])
+  const [streakData, setStreakData] = useState<{ records: ReadingTimeRecord[], current: number, longest: number }>({ records: [], current: 0, longest: 0 })
 
   useEffect(() => {
     const to = new Date()
@@ -38,6 +42,8 @@ export function StatsPage({ books, readingTime, readingGoal }: StatsPageProps) {
     ]).then(([daily, perBook]) => {
       setRecords(daily)
       setBookRecords(perBook)
+      const streak = calcStreak(daily as ReadingTimeRecord[])
+      setStreakData({ records: daily as ReadingTimeRecord[], current: streak.current, longest: streak.longest })
     }).catch(() => {})
   }, [])
 
@@ -144,6 +150,11 @@ export function StatsPage({ books, readingTime, readingGoal }: StatsPageProps) {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Streak Heatmap */}
+      <div style={{ marginTop: 16 }}>
+        <StreakHeatmap records={streakData.records} current={streakData.current} longest={streakData.longest} />
       </div>
 
       {/* per-book reading time */}

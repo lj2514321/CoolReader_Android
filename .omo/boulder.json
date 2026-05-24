@@ -1,0 +1,301 @@
+{
+  "schema_version": 2,
+  "active_work_id": "coolreader-phase1-fixes-features-de4c7a88",
+  "works": {
+    "coolreader-phase1-fixes-features-de4c7a88": {
+      "work_id": "coolreader-phase1-fixes-features-de4c7a88",
+      "active_plan": "C:\\Users\\Luna\\Desktop\\学习\\CoolReader_android\\.omo\\plans\\coolreader-phase1-fixes+features.md",
+      "plan_name": "coolreader-phase1-fixes+features",
+      "status": "completed",
+      "started_at": "2026-05-24T13:09:58.960Z",
+      "updated_at": "2026-05-24T13:52:07.338Z",
+      "session_ids": [
+        "ses_1a5f822fdffe0ccWkYpQ37Ty0I"
+      ],
+      "session_origins": {
+        "ses_1a5f822fdffe0ccWkYpQ37Ty0I": "direct"
+      },
+      "agent": "atlas",
+      "task_sessions": {
+        "todo:1": {
+          "task_key": "todo:1",
+          "task_label": "1",
+          "task_title": "App loads without crash (Library visible)",
+          "session_id": "ses_1a5c3391bffeANgWla2mr0PloI",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "started_at": "2026-05-24T13:11:03.514Z",
+          "ended_at": "2026-05-24T13:50:03.386Z",
+          "elapsed_ms": 2339872,
+          "status": "completed",
+          "updated_at": "2026-05-24T13:50:03.386Z"
+        },
+        "todo:4": {
+          "task_key": "todo:4",
+          "task_label": "4",
+          "task_title": "Add streak data model + IndexedDB helpers",
+          "session_id": "ses_1a5dd0b28ffeJ6mvg93QWTKmgb",
+          "agent": "Sisyphus-Junior",
+          "category": "quick",
+          "started_at": "2026-05-24T13:19:41.066Z",
+          "status": "completed",
+          "updated_at": "2026-05-24T13:21:49.302Z",
+          "ended_at": "2026-05-24T13:21:49.302Z",
+          "elapsed_ms": 128236
+        },
+        "todo:6": {
+          "task_key": "todo:6",
+          "task_label": "6",
+          "task_title": "Integrate streak into StatsPage",
+          "session_id": "ses_1a5d7af01ffeF827lmiQ19U6PX",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "started_at": "2026-05-24T13:23:17.640Z",
+          "status": "completed",
+          "updated_at": "2026-05-24T13:28:53.463Z",
+          "ended_at": "2026-05-24T13:28:53.463Z",
+          "elapsed_ms": 335823
+        },
+        "todo:7": {
+          "task_key": "todo:7",
+          "task_label": "7",
+          "task_title": "Build notes/highlights export service",
+          "session_id": "ses_1a5d28158ffeVcECl67VgtBHdx",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "started_at": "2026-05-24T13:31:24.880Z",
+          "status": "completed",
+          "updated_at": "2026-05-24T13:31:44.574Z",
+          "ended_at": "2026-05-24T13:31:44.574Z",
+          "elapsed_ms": 19694
+        },
+        "todo:8": {
+          "task_key": "todo:8",
+          "task_label": "8",
+          "task_title": "Add export UI trigger",
+          "session_id": "ses_1a5d08417ffefLh8Kro1Gx2ORr",
+          "agent": "Sisyphus-Junior",
+          "category": "visual-engineering",
+          "started_at": "2026-05-24T13:33:46.502Z",
+          "status": "completed",
+          "updated_at": "2026-05-24T13:34:33.875Z",
+          "ended_at": "2026-05-24T13:34:33.875Z",
+          "elapsed_ms": 47373
+        },
+        "todo:10": {
+          "task_key": "todo:10",
+          "task_label": "10",
+          "task_title": "Add backup UI in Settings",
+          "session_id": "ses_1a5cddc51ffeAKXBE6sZ7fRs90",
+          "agent": "Sisyphus-Junior",
+          "category": "visual-engineering",
+          "started_at": "2026-05-24T13:35:27.512Z",
+          "status": "completed",
+          "updated_at": "2026-05-24T13:36:38.422Z",
+          "ended_at": "2026-05-24T13:36:38.422Z",
+          "elapsed_ms": 70910
+        },
+        "todo:12": {
+          "task_key": "todo:12",
+          "task_label": "12",
+          "task_title": "WebDAV sync UI + triggers",
+          "session_id": "ses_1a5cc078bffezlTmEDKgw76w6x",
+          "agent": "Sisyphus-Junior",
+          "category": "visual-engineering",
+          "started_at": "2026-05-24T13:39:45.495Z",
+          "status": "completed",
+          "updated_at": "2026-05-24T13:40:26.633Z",
+          "ended_at": "2026-05-24T13:40:26.633Z",
+          "elapsed_ms": 41138
+        },
+        "todo:14": {
+          "task_key": "todo:14",
+          "task_label": "14",
+          "task_title": "OPDS catalog browser component",
+          "session_id": "ses_1a5c856eeffeoT3wsboiDmenq0",
+          "agent": "Sisyphus-Junior",
+          "category": "visual-engineering",
+          "started_at": "2026-05-24T13:41:36.833Z",
+          "status": "completed",
+          "updated_at": "2026-05-24T13:44:39.123Z",
+          "ended_at": "2026-05-24T13:44:39.123Z",
+          "elapsed_ms": 182290
+        },
+        "todo:16": {
+          "task_key": "todo:16",
+          "task_label": "16",
+          "task_title": "Integration testing + edge cases",
+          "session_id": "ses_1a5c47bc8ffelbFNT8h5t37K9k",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "started_at": "2026-05-24T13:46:10.434Z",
+          "status": "completed",
+          "updated_at": "2026-05-24T13:46:16.765Z",
+          "ended_at": "2026-05-24T13:46:16.765Z",
+          "elapsed_ms": 6331
+        },
+        "final-wave:f1": {
+          "task_key": "final-wave:f1",
+          "task_label": "F1",
+          "task_title": "**Plan Compliance Audit** — `oracle`",
+          "session_id": "ses_1a5c34f23ffeDExuY5twnRuLWg",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "started_at": "2026-05-24T13:47:23.747Z",
+          "status": "completed",
+          "updated_at": "2026-05-24T13:51:41.749Z",
+          "ended_at": "2026-05-24T13:51:41.749Z",
+          "elapsed_ms": 258002
+        }
+      },
+      "ended_at": "2026-05-24T13:52:07.338Z",
+      "elapsed_ms": 2528378
+    }
+  },
+  "active_plan": "C:\\Users\\Luna\\Desktop\\学习\\CoolReader_android\\.omo\\plans\\coolreader-phase1-fixes+features.md",
+  "started_at": "2026-05-24T13:09:58.960Z",
+  "status": "completed",
+  "updated_at": "2026-05-24T13:52:07.338Z",
+  "session_ids": [
+    "ses_1a5f822fdffe0ccWkYpQ37Ty0I"
+  ],
+  "session_origins": {
+    "ses_1a5f822fdffe0ccWkYpQ37Ty0I": "direct"
+  },
+  "plan_name": "coolreader-phase1-fixes+features",
+  "task_sessions": {
+    "todo:1": {
+      "task_key": "todo:1",
+      "task_label": "1",
+      "task_title": "App loads without crash (Library visible)",
+      "session_id": "ses_1a5c3391bffeANgWla2mr0PloI",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "started_at": "2026-05-24T13:11:03.514Z",
+      "ended_at": "2026-05-24T13:50:03.386Z",
+      "elapsed_ms": 2339872,
+      "status": "completed",
+      "updated_at": "2026-05-24T13:50:03.386Z"
+    },
+    "todo:4": {
+      "task_key": "todo:4",
+      "task_label": "4",
+      "task_title": "Add streak data model + IndexedDB helpers",
+      "session_id": "ses_1a5dd0b28ffeJ6mvg93QWTKmgb",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "started_at": "2026-05-24T13:19:41.066Z",
+      "status": "completed",
+      "updated_at": "2026-05-24T13:21:49.302Z",
+      "ended_at": "2026-05-24T13:21:49.302Z",
+      "elapsed_ms": 128236
+    },
+    "todo:6": {
+      "task_key": "todo:6",
+      "task_label": "6",
+      "task_title": "Integrate streak into StatsPage",
+      "session_id": "ses_1a5d7af01ffeF827lmiQ19U6PX",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "started_at": "2026-05-24T13:23:17.640Z",
+      "status": "completed",
+      "updated_at": "2026-05-24T13:28:53.463Z",
+      "ended_at": "2026-05-24T13:28:53.463Z",
+      "elapsed_ms": 335823
+    },
+    "todo:7": {
+      "task_key": "todo:7",
+      "task_label": "7",
+      "task_title": "Build notes/highlights export service",
+      "session_id": "ses_1a5d28158ffeVcECl67VgtBHdx",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "started_at": "2026-05-24T13:31:24.880Z",
+      "status": "completed",
+      "updated_at": "2026-05-24T13:31:44.574Z",
+      "ended_at": "2026-05-24T13:31:44.574Z",
+      "elapsed_ms": 19694
+    },
+    "todo:8": {
+      "task_key": "todo:8",
+      "task_label": "8",
+      "task_title": "Add export UI trigger",
+      "session_id": "ses_1a5d08417ffefLh8Kro1Gx2ORr",
+      "agent": "Sisyphus-Junior",
+      "category": "visual-engineering",
+      "started_at": "2026-05-24T13:33:46.502Z",
+      "status": "completed",
+      "updated_at": "2026-05-24T13:34:33.875Z",
+      "ended_at": "2026-05-24T13:34:33.875Z",
+      "elapsed_ms": 47373
+    },
+    "todo:10": {
+      "task_key": "todo:10",
+      "task_label": "10",
+      "task_title": "Add backup UI in Settings",
+      "session_id": "ses_1a5cddc51ffeAKXBE6sZ7fRs90",
+      "agent": "Sisyphus-Junior",
+      "category": "visual-engineering",
+      "started_at": "2026-05-24T13:35:27.512Z",
+      "status": "completed",
+      "updated_at": "2026-05-24T13:36:38.422Z",
+      "ended_at": "2026-05-24T13:36:38.422Z",
+      "elapsed_ms": 70910
+    },
+    "todo:12": {
+      "task_key": "todo:12",
+      "task_label": "12",
+      "task_title": "WebDAV sync UI + triggers",
+      "session_id": "ses_1a5cc078bffezlTmEDKgw76w6x",
+      "agent": "Sisyphus-Junior",
+      "category": "visual-engineering",
+      "started_at": "2026-05-24T13:39:45.495Z",
+      "status": "completed",
+      "updated_at": "2026-05-24T13:40:26.633Z",
+      "ended_at": "2026-05-24T13:40:26.633Z",
+      "elapsed_ms": 41138
+    },
+    "todo:14": {
+      "task_key": "todo:14",
+      "task_label": "14",
+      "task_title": "OPDS catalog browser component",
+      "session_id": "ses_1a5c856eeffeoT3wsboiDmenq0",
+      "agent": "Sisyphus-Junior",
+      "category": "visual-engineering",
+      "started_at": "2026-05-24T13:41:36.833Z",
+      "status": "completed",
+      "updated_at": "2026-05-24T13:44:39.123Z",
+      "ended_at": "2026-05-24T13:44:39.123Z",
+      "elapsed_ms": 182290
+    },
+    "todo:16": {
+      "task_key": "todo:16",
+      "task_label": "16",
+      "task_title": "Integration testing + edge cases",
+      "session_id": "ses_1a5c47bc8ffelbFNT8h5t37K9k",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "started_at": "2026-05-24T13:46:10.434Z",
+      "status": "completed",
+      "updated_at": "2026-05-24T13:46:16.765Z",
+      "ended_at": "2026-05-24T13:46:16.765Z",
+      "elapsed_ms": 6331
+    },
+    "final-wave:f1": {
+      "task_key": "final-wave:f1",
+      "task_label": "F1",
+      "task_title": "**Plan Compliance Audit** — `oracle`",
+      "session_id": "ses_1a5c34f23ffeDExuY5twnRuLWg",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "started_at": "2026-05-24T13:47:23.747Z",
+      "status": "completed",
+      "updated_at": "2026-05-24T13:51:41.749Z",
+      "ended_at": "2026-05-24T13:51:41.749Z",
+      "elapsed_ms": 258002
+    }
+  },
+  "agent": "atlas",
+  "ended_at": "2026-05-24T13:52:07.338Z",
+  "elapsed_ms": 2528378
+}

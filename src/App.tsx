@@ -45,7 +45,7 @@ export default function App() {
       }
     }).catch(console.warn).finally(() => setLoading(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [epub])
+  }, [])
 
   const handleImport = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
