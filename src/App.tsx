@@ -4,6 +4,7 @@ import { useEpub } from './hooks/useEpub'
 import { Library } from './components/Library'
 import { Reader } from './components/Reader'
 import type { WebDAVConfig, AIConfig } from './types'
+import { StatusBar, Style } from '@capacitor/status-bar'
 
 export default function App() {
   const [books, setBooks] = useState<BookRecord[]>([])
@@ -36,6 +37,8 @@ export default function App() {
       setReadingTime(rt)
       setProgressRecords(progressRecords)
       epub.initReadingTime(rt)
+      StatusBar.setOverlaysWebView({ overlay: true })
+      StatusBar.setStyle({ style: Style.Dark })
       const sb = behavior as 'library' | 'resume' | null
       if (sb === 'library' || sb === 'resume') setStartupBehavior(sb)
       if (sb === 'resume' && bks.length > 0) {
