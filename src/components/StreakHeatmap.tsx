@@ -115,7 +115,7 @@ export function StreakHeatmap({ records, current, longest }: StreakHeatmapProps)
           <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>还没有阅读记录</span>
         </div>
       ) : (
-        <div ref={containerRef} style={{ position: 'relative', width: totalWidth }}>
+        <div ref={containerRef} style={{ position: 'relative', overflowX: 'auto', width: '100%' }}>
           {/* Day labels */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: GAP, marginRight: 8, float: 'left', height: totalHeight }}>
             {[1, 3, 5].map(r => (
