@@ -62,7 +62,6 @@ export function BookShelf({ books, readingTime, readingGoal, progressRecords, on
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     let list = q ? books.filter(b => b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q)) : books
-    if (!q && sortKey !== 'recent') list = list.filter(b => !recentPaths.has(b.filePath))
     list = [...list].sort((a, b) => {
       if (sortKey === 'title') return a.title.localeCompare(b.title)
       if (sortKey === 'author') return a.author.localeCompare(b.author)
@@ -74,7 +73,7 @@ export function BookShelf({ books, readingTime, readingGoal, progressRecords, on
       return 0
     })
     return list
-  }, [books, search, sortKey, recentPaths, progressMap])
+  }, [books, search, sortKey, progressMap])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
@@ -111,6 +110,20 @@ export function BookShelf({ books, readingTime, readingGoal, progressRecords, on
             </div>
           )}
         </div>
+      </div>
+
+      {/* search */}
+      <div style={{ margin: '16px 16px 4px', flexShrink: 0 }}>
+        <input
+          value={search} onChange={e => setSearch(e.target.value)}
+          placeholder="搜索书名或作者…"
+          style={{
+            width: '100%', boxSizing: 'border-box',
+            padding: '10px 14px', borderRadius: 10,
+            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: 13, outline: 'none',
+          }}
+        />
       </div>
 
       {/* continue reading */}
