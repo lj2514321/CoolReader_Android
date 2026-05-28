@@ -128,20 +128,27 @@ export function BookShelf({ books, readingTime, readingGoal, progressRecords, on
 
       {/* continue reading */}
       {recentBooks.length > 0 && (
-        <div style={{ margin: '16px 16px 0', flexShrink: 0 }}>
+        <div style={{
+          margin: '16px 16px 0',
+          padding: '16px',
+          background: 'rgba(99,102,241,0.06)',
+          border: '1px solid rgba(168,85,247,0.1)',
+          borderRadius: 16,
+          flexShrink: 0,
+        }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 10, letterSpacing: -0.2 }}>📖 继续阅读</div>
-          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 4 }}>
+          <div style={{ display: 'flex', gap: 16, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 4 }}>
             {recentBooks.map(({ book, progress }) => (
               <div key={book.filePath} onClick={() => onOpenBook(book.filePath)}
                 style={{
-                  flexShrink: 0, width: 110, borderRadius: 12, cursor: 'pointer',
+                  flexShrink: 0, width: 140, borderRadius: 12, cursor: 'pointer',
                   background: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(168,85,247,0.08) 100%)',
                   border: '1px solid rgba(168,85,247,0.12)',
-                  padding: '10px 8px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  padding: '14px 10px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center',
                 }}
               >
                 <div style={{
-                  width: 64, height: 86, borderRadius: 6, overflow: 'hidden', flexShrink: 0,
+                  width: 85, height: 115, borderRadius: 6, overflow: 'hidden', flexShrink: 0,
                   background: !book.cover ? 'linear-gradient(135deg, #6366f1, #a855f7)' : undefined,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
@@ -151,7 +158,7 @@ export function BookShelf({ books, readingTime, readingGoal, progressRecords, on
                     <span style={{ fontSize: 20, opacity: 0.5 }}>📖</span>
                   )}
                 </div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.8)', marginTop: 6, textAlign: 'center', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.8)', marginTop: 6, textAlign: 'center', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {book.title}
                 </div>
                 <div style={{ width: '100%', height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.08)', marginTop: 6, overflow: 'hidden' }}>
@@ -163,19 +170,6 @@ export function BookShelf({ books, readingTime, readingGoal, progressRecords, on
         </div>
       )}
 
-      {/* search */}
-      <div style={{ margin: '16px 16px 4px', flexShrink: 0 }}>
-        <input
-          value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="搜索书名或作者…"
-          style={{
-            width: '100%', boxSizing: 'border-box',
-            padding: '10px 14px', borderRadius: 10,
-            border: '1px solid rgba(255,255,255,0.08)',
-            background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: 13, outline: 'none',
-          }}
-        />
-      </div>
       {/* sort */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: 8, margin: '0 16px 0', flexShrink: 0 }}>
         {[{ key: 'title' as const, label: '书名' }, { key: 'author' as const, label: '作者' }, { key: 'recent' as const, label: '最近' }].map(s => (
@@ -208,76 +202,79 @@ export function BookShelf({ books, readingTime, readingGoal, progressRecords, on
           </div>
         </div>
       ) : (
-        <div style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', padding: '28px 16px 32px 16px' }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
-            gap: '24px 16px',
-            justifyItems: 'center',
-          }}>
-            {filtered.map((book, i) => {
-              const [c1, c2] = colors[i % colors.length]
-              return (
-                <div key={book.filePath} style={{
-                  position: 'relative',
-                  borderRadius: 14,
-                  background: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(168,85,247,0.08) 100%)',
-                  border: '1px solid rgba(168,85,247,0.12)',
-                  padding: '16px 10px 14px',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                  cursor: 'pointer',
-                  width: '100%',
-                  maxWidth: 148,
-                }}
-                  onClick={() => onOpenBook(book.filePath)}
-                >
-                  <div style={{
-                    width: '100%', aspectRatio: '3/4', maxWidth: 110,
-                    borderRadius: 10,
-                    overflow: 'hidden',
-                    boxShadow: '0 6px 16px rgba(0,0,0,0.3)',
-                    background: !book.cover ? ('linear-gradient(135deg, ' + c1 + ', ' + c2 + ')') : undefined,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0,
-                  }}>
-                    {book.cover ? (
-                      <img src={book.cover} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <span style={{ fontSize: 32, opacity: 0.5 }}>📖</span>
-                    )}
-                  </div>
-                  <div style={{ marginTop: 10, textAlign: 'center', width: '100%' }}>
+        <>
+          <div style={{ margin: '0 16px 10px', fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: -0.2 }}>📚 全部书籍</div>
+          <div style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', padding: '28px 16px 32px 16px' }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+              gap: '24px 16px',
+              justifyItems: 'center',
+            }}>
+              {filtered.map((book, i) => {
+                const [c1, c2] = colors[i % colors.length]
+                return (
+                  <div key={book.filePath} style={{
+                    position: 'relative',
+                    borderRadius: 14,
+                    background: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(168,85,247,0.08) 100%)',
+                    border: '1px solid rgba(168,85,247,0.12)',
+                    padding: '16px 10px 14px',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                    cursor: 'pointer',
+                    width: '100%',
+                    maxWidth: 148,
+                  }}
+                    onClick={() => onOpenBook(book.filePath)}
+                  >
                     <div style={{
-                      fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.85)',
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      lineHeight: 1.3,
-                    }}>{book.title}</div>
-                    <div style={{
-                      fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 2,
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>{book.author}</div>
-                    {progressMap.has(book.filePath) && (
-                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', marginTop: 3, lineHeight: 1.2 }}>
-                        {formatRelativeTime(progressMap.get(book.filePath)!.updatedAt)}
-                      </div>
-                    )}
+                      width: '100%', aspectRatio: '3/4', maxWidth: 110,
+                      borderRadius: 10,
+                      overflow: 'hidden',
+                      boxShadow: '0 6px 16px rgba(0,0,0,0.3)',
+                      background: !book.cover ? ('linear-gradient(135deg, ' + c1 + ', ' + c2 + ')') : undefined,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      {book.cover ? (
+                        <img src={book.cover} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <span style={{ fontSize: 32, opacity: 0.5 }}>📖</span>
+                      )}
+                    </div>
+                    <div style={{ marginTop: 10, textAlign: 'center', width: '100%' }}>
+                      <div style={{
+                        fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.85)',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        lineHeight: 1.3,
+                      }}>{book.title}</div>
+                      <div style={{
+                        fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 2,
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>{book.author}</div>
+                      {progressMap.has(book.filePath) && (
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', marginTop: 3, lineHeight: 1.2 }}>
+                          {formatRelativeTime(progressMap.get(book.filePath)!.updatedAt)}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ position: 'absolute', top: -6, right: -6, zIndex: 2 }}>
+                      <button onClick={(e) => { e.stopPropagation(); setConfirmPath(book.filePath) }}
+                        style={{
+                          width: 24, height: 24, borderRadius: '50%', border: 'none', cursor: 'pointer',
+                          background: 'rgba(220,38,38,0.7)', color: '#fff', fontSize: 12, lineHeight: '24px',
+                          textAlign: 'center', padding: 0, opacity: 0.6,
+                          transition: 'opacity 0.15s',
+                        }}
+                      >✕</button>
+                    </div>
                   </div>
-                  <div style={{ position: 'absolute', top: -6, right: -6, zIndex: 2 }}>
-                    <button onClick={(e) => { e.stopPropagation(); setConfirmPath(book.filePath) }}
-                      style={{
-                        width: 24, height: 24, borderRadius: '50%', border: 'none', cursor: 'pointer',
-                        background: 'rgba(220,38,38,0.7)', color: '#fff', fontSize: 12, lineHeight: '24px',
-                        textAlign: 'center', padding: 0, opacity: 0.6,
-                        transition: 'opacity 0.15s',
-                      }}
-                    >✕</button>
-                  </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {confirmPath && (
