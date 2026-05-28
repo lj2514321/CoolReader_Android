@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { BookMeta, ThemeMode, AIConfig, NavItem, ReaderLayout, Bookmark, Highlight, SearchResult, CustomTheme, defaultCustomTheme } from '../types'
+import useSwipe from '../hooks/useSwipe'
 import { CustomThemePanel } from './CustomThemePanel'
 import { AIPanel } from './AIPanel'
 import { Sidebar } from './Sidebar'
@@ -83,8 +84,17 @@ export function Reader({
 }: ReaderProps) {
   const nextRef = useRef(onNext)
   const prevRef = useRef(onPrev)
+  const isSwipingRef = useRef(false)
+  const touchStartPosRef = useRef({ x: 0, y: 0 })
   nextRef.current = onNext
   prevRef.current = onPrev
+
+  const swipeHandlers = useSwipe({
+    threshold: 50,
+    onSwipeLeft: () => { nextRef.current() },
+    onSwipeRight: () => { prevRef.current() },
+    enabled: layout.flow !== 'scrolled-doc',
+  })
 
   const loadedRef = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -120,6 +130,7 @@ export function Reader({
   const [searching, setSearching] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [showCustomTheme, setShowCustomTheme] = useState(false)
+  const [showToolsPopup, setShowToolsPopup] = useState(false)
   const [brightness, setBrightness] = useState(100)
   const [showBrightness, setShowBrightness] = useState(false)
   const [localCustomTheme, setLocalCustomTheme] = useState<CustomTheme>(customTheme ?? defaultCustomTheme)
@@ -189,6 +200,10 @@ export function Reader({
   }, [searchQuery, onSearch])
 
   const handleViewerClick = (e: React.MouseEvent) => {
+    if (isSwipingRef.current) {
+      isSwipingRef.current = false
+      return
+    }
     const iframe = document.querySelector<HTMLIFrameElement>('#viewer iframe')
     if (iframe?.contentDocument) {
       const r = iframe.getBoundingClientRect()
@@ -202,8 +217,8 @@ export function Reader({
 
     const x = e.clientX - e.currentTarget.getBoundingClientRect().left
     const w = e.currentTarget.getBoundingClientRect().width
-    if (x < w * 0.22) { prevRef.current(); showControls(); return }
-    if (x > w * 0.78) { nextRef.current(); showControls(); return }
+    if (x < w * 0.22) { prevRef.current(); return }
+    if (x > w * 0.78) { nextRef.current(); return }
 
     setShowUI(v => !v)
     clearTimeout(hideTimer.current)
@@ -213,22 +228,39 @@ export function Reader({
   const fg = dark ? '#c8c8e0' : '#2d2b55'
 
   return (
-    <div ref={containerRef} style={{ height: '100%', background: themeBg[theme], overflow: 'hidden', position: 'relative' }}>
-      <div id="viewer" style={{ position: 'absolute', inset: 0, filter: `brightness(${brightness / 100})`, transition: 'filter 0.2s' }} />
+    <div ref={containerRef} style={{ position: 'fixed', inset: 0, zIndex: 100, background: themeBg[theme], overflow: 'hidden' }}>
+      <div id="viewer" style={{ position: 'absolute', inset: 0, filter: `brightness(${brightness / 100})`, transition: 'filter 0.2s', paddingTop: 'max(env(safe-area-inset-top), 48px)', paddingBottom: 'max(env(safe-area-inset-bottom), 24px)' }} />
       <div
         onClick={handleViewerClick}
         onKeyDown={e => {
           if (e.key === 'ArrowRight') { e.preventDefault(); nextRef.current() }
           if (e.key === 'ArrowLeft') { e.preventDefault(); prevRef.current() }
         }}
+        onTouchStart={(e) => {
+          touchStartPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+          isSwipingRef.current = false
+          swipeHandlers.onTouchStart(e)
+        }}
+        onTouchMove={(e) => {
+          swipeHandlers.onTouchMove(e)
+        }}
+        onTouchEnd={(e) => {
+          const dx = Math.abs(e.changedTouches[0].clientX - touchStartPosRef.current.x)
+          const dy = Math.abs(e.changedTouches[0].clientY - touchStartPosRef.current.y)
+          if (dx > 10 || dy > 10) {
+            isSwipingRef.current = true
+          }
+          swipeHandlers.onTouchEnd(e)
+        }}
         tabIndex={0}
-        style={{ position: 'absolute', inset: 0, zIndex: 1, outline: 'none' }}
+        style={{ position: 'absolute', inset: 0, zIndex: 1, outline: 'none', touchAction: 'none' }}
       />
 
       {/* top bar */}
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0,
-        padding: '12px 8px', paddingTop: '36px',
+        padding: '12px 8px',
+        paddingTop: 'calc(12px + max(env(safe-area-inset-top), 48px))',
         opacity: showUI ? 1 : 0,
         pointerEvents: showUI ? 'auto' : 'none',
         transition: 'opacity 0.3s ease',
@@ -243,66 +275,28 @@ export function Reader({
           <span style={{ flex: 1, fontWeight: 600, fontSize: 14, color: fg, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {meta?.title || ''}
           </span>
-          <button onClick={(e) => { e.stopPropagation(); setShowSidebar(v => !v) }} style={btn(fg)}>目录</button>
-          <button onClick={(e) => { e.stopPropagation(); onToggleBookmark() }}
-            style={{
-              ...btn(fg), fontSize: 16, padding: '7px 10px',
-              color: bookmarkCfi ? '#a855f7' : fg,
-              opacity: bookmarkCfi ? 1 : 0.6,
-            }}
-          >{bookmarkCfi ? '🔖' : '🔖'}</button>
-          {themes.map(t => (
-            <button key={t.key} onClick={(e) => { e.stopPropagation(); onThemeChange(t.key); setShowCustomTheme(false) }}
-              style={{
-                ...btn(fg), padding: '7px 10px',
-                background: theme === t.key ? 'rgba(99,102,241,0.3)' : 'transparent',
-                opacity: 1,
-                fontWeight: theme === t.key ? 700 : 400,
-              }}
-            >{t.icon}</button>
-          ))}
-          <button onClick={(e) => { e.stopPropagation(); onThemeChange('custom'); setShowCustomTheme(v => !v) }}
-            style={{
-              ...btn(fg), padding: '7px 10px', fontSize: 15,
-              background: theme === 'custom' ? 'rgba(99,102,241,0.3)' : 'transparent',
-              opacity: 1,
-            }}
-          >🎨</button>
-          <button onClick={(e) => { e.stopPropagation(); setShowSearch(v => !v); setShowMarkers(false); setShowAa(false) }}
-            style={{
-              ...btn(fg), padding: '7px 10px', fontSize: 15,
-              background: showSearch ? 'rgba(99,102,241,0.3)' : 'transparent',
-              opacity: 1,
-            }}
-          >🔍</button>
-          <button onClick={(e) => { e.stopPropagation(); setShowBrightness(v => !v) }}
-            style={{
-              ...btn(fg), padding: '7px 10px', fontSize: 15,
-              background: showBrightness ? 'rgba(99,102,241,0.3)' : 'transparent',
-              opacity: 1,
-            }}
-            title="亮度"
-          >☀️</button>
-          <button onClick={(e) => { e.stopPropagation(); setShowMarkers(v => !v) }} style={btn(fg)}>📑</button>
-          <button onClick={(e) => { e.stopPropagation(); setShowAa(v => !v) }} style={btn(fg)}>Aa</button>
         </div>
       </div>
 
       {/* bottom bar */}
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
-        padding: '8px',
+        padding: '6px 8px',
+        paddingBottom: 'calc(8px + max(env(safe-area-inset-bottom), 24px))',
+        background: dark ? 'rgba(20,20,40,0.92)' : 'rgba(245,243,250,0.92)',
+        border: `1px solid ${dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+        borderRadius: 14,
         opacity: showUI ? 1 : 0,
         pointerEvents: showUI ? 'auto' : 'none',
         transition: 'opacity 0.3s ease',
         zIndex: 2,
       }}>
+        {/* Row 1: prev, progress, next */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 8,
-          borderRadius: 14, padding: '8px 12px',
-          ...glass(dark),
+          padding: '4px 6px',
         }}>
-          <button onClick={onPrev} style={btn(fg)}>◂ 上一页</button>
+          <button onClick={onPrev} style={{...btn(fg), minWidth: 44, minHeight: 44}}>◂</button>
 
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
             <div
@@ -333,25 +327,49 @@ export function Reader({
             <span style={{ fontSize: 11, fontWeight: 600, color: fg, opacity: 0.5, minWidth: 32, textAlign: 'right' }}>{progress}%</span>
           </div>
 
-          <button onClick={onNext} style={btn(fg)}>下一页 ▸</button>
+          <button onClick={onNext} style={{...btn(fg), minWidth: 44, minHeight: 44}}>▸</button>
         </div>
-      </div>
 
-      {/* AI button */}
-      {!showAI && (
-        <button
-          onClick={() => setShowAI(true)}
-          style={{
-            position: 'absolute', bottom: 16, right: 16, zIndex: 5,
-            border: 'none', borderRadius: 12, padding: '10px 16px',
-            cursor: 'pointer',
-            background: 'linear-gradient(135deg, #667eea, #764ba2)',
-            color: '#fff', fontSize: 13, fontWeight: 700,
-            opacity: 0.7, transition: 'all 0.15s',
-            boxShadow: '0 4px 12px rgba(102,126,234,0.4)',
-          }}
-        >AI</button>
-      )}
+        {/* Row 2: tools */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          gap: 12,
+          marginTop: 2,
+          padding: '6px 4px',
+        }}>
+          <button onClick={() => setShowSidebar(v => !v)} style={btn(fg)}>📑 目录</button>
+          <button onClick={() => setShowAa(v => !v)} style={btn(fg)}>Aa 主题</button>
+          <button onClick={() => setShowMarkers(v => !v)} style={btn(fg)}>🖍️ 笔记</button>
+          <button onClick={() => setShowToolsPopup(v => !v)} style={btn(fg)}>🛠️ 工具</button>
+        </div>
+
+        {/* Tools Popup */}
+        {showToolsPopup && (
+          <>
+            <div onClick={() => setShowToolsPopup(false)} style={{
+              position: 'fixed', inset: 0, zIndex: 9, background: 'transparent',
+            }} />
+            <div style={{
+              position: 'absolute', bottom: 'calc(60px + max(env(safe-area-inset-bottom), 24px))', right: 16,
+              zIndex: 10,
+              borderRadius: 12, padding: '8px',
+              background: dark ? 'rgba(20,20,40,0.95)' : 'rgba(245,243,250,0.95)',
+              border: `1px solid ${dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
+              boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+              display: 'flex', flexDirection: 'column', gap: 4,
+            }}>
+              <button
+                onClick={() => { setShowSearch(true); setShowToolsPopup(false) }}
+                style={{...btn(fg), justifyContent: 'flex-start', gap: 6, padding: '8px 12px'}}
+              >🔍 搜索</button>
+              <button
+                onClick={() => { setShowAI(true); setShowToolsPopup(false) }}
+                style={{...btn(fg), justifyContent: 'flex-start', gap: 6, padding: '8px 12px'}}
+              >🤖 AI</button>
+            </div>
+          </>
+        )}
+      </div>
 
       <AIPanel
         visible={showAI}
@@ -375,10 +393,10 @@ export function Reader({
             position: 'fixed', inset: 0, zIndex: 9, background: 'transparent',
           }} />
           <div onClick={e => e.stopPropagation()} style={{
-            position: 'fixed', top: 100, right: 16, zIndex: 10,
-            width: 300,
+            position: 'fixed', top: 'max(80px, 10vh)', right: 16, zIndex: 10,
+            maxWidth: 'min(90vw, 400px)',
             borderRadius: 14, padding: '12px 14px',
-            ...glass(dark),
+            background: dark ? '#1a1a2e' : '#f5f3fa',
             border: '1px solid rgba(255,255,255,0.1)',
             boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
             display: 'flex', flexDirection: 'column', gap: 8,
@@ -432,10 +450,10 @@ export function Reader({
 
       {showBrightness && (
         <div onClick={e => e.stopPropagation()} style={{
-          position: 'absolute', top: 80, right: 16, zIndex: 10,
+          position: 'fixed', bottom: 'calc(80px + env(safe-area-inset-bottom, 12px))', left: '50%', transform: 'translateX(-50%)', zIndex: 10,
           background: 'rgba(0,0,0,0.85)',
-          borderRadius: 12, padding: '16px 12px',
-          display: 'flex', flexDirection: 'column', gap: 8, minWidth: 160,
+          borderRadius: 24, padding: '16px 20px',
+          display: 'flex', flexDirection: 'column', gap: 8, minWidth: 200, alignItems: 'center',
         }}>
           <div style={{ color: '#fff', fontSize: 12, textAlign: 'center' }}>亮度</div>
           <input
@@ -457,12 +475,14 @@ export function Reader({
           <div onClick={() => setShowCustomTheme(false)} style={{
             position: 'fixed', inset: 0, zIndex: 9, background: 'transparent',
           }} />
-          <CustomThemePanel
-            theme={localCustomTheme}
-            dark={dark}
-            onChange={onCustomThemeChange ?? (() => {})}
-            onClose={() => setShowCustomTheme(false)}
-          />
+          <div style={{ position: 'fixed', inset: 0, zIndex: 20, paddingTop: 'env(safe-area-inset-top)' }}>
+            <CustomThemePanel
+              theme={localCustomTheme}
+              dark={dark}
+              onChange={onCustomThemeChange ?? (() => {})}
+              onClose={() => setShowCustomTheme(false)}
+            />
+          </div>
         </>
       )}
 
@@ -482,8 +502,11 @@ export function Reader({
       <LayoutPanel
         visible={showAa}
         layout={layout}
-        dark={dark}
+        theme={theme}
+        brightness={brightness}
         onLayoutChange={onLayoutChange}
+        onThemeChange={onThemeChange}
+        onBrightnessChange={setBrightness}
         onClose={() => setShowAa(false)}
       />
 
