@@ -33,7 +33,7 @@ export function SidebarNav({ libPage, onSwitchPage }: SidebarNavProps) {
       justifyContent: 'center', flexShrink: 0, zIndex: 2,
       background: 'transparent',
       borderTop: 'none',
-      paddingBottom: 'env(safe-area-inset-bottom, 4px)',
+      paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
     }}>
       <div style={{
         display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center',

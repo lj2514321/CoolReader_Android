@@ -97,7 +97,7 @@ export function Library({ books, readingTime, progressRecords, onOpenBook, onImp
       <div style={{ position: 'absolute', top: '0%', left: '20%', width: '60%', height: '60%', background: 'radial-gradient(ellipse, rgba(99,102,241,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', bottom: '0%', right: '0%', width: '50%', height: '40%', background: 'radial-gradient(ellipse, rgba(168,85,247,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', zIndex: 1 }}>
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', zIndex: 1, overscrollBehavior: 'none' }}>
         <div style={{
           position: 'absolute', inset: 0,
           transition: 'opacity 0.4s ease, transform 0.4s ease',

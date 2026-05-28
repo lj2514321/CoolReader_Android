@@ -1,14 +1,18 @@
-import { ReaderLayout, fontFamilies, AnimationMode } from '../types'
+import { ReaderLayout, fontFamilies, AnimationMode, ThemeMode } from '../types'
 
 interface LayoutPanelProps {
   visible: boolean
   layout: ReaderLayout
   dark: boolean
+  theme: ThemeMode
+  brightness: number
   onLayoutChange: (patch: Partial<ReaderLayout>) => void
+  onThemeChange: (t: ThemeMode) => void
+  onBrightnessChange: (v: number) => void
   onClose: () => void
 }
 
-export function LayoutPanel({ visible, layout, dark, onLayoutChange, onClose }: LayoutPanelProps) {
+export function LayoutPanel({ visible, layout, dark, theme, brightness, onLayoutChange, onThemeChange, onBrightnessChange, onClose }: LayoutPanelProps) {
   const bg = dark ? '#0f0c29e0' : '#f0ecf8e0'
   const fg = dark ? '#c8c8e0' : '#2d2b55'
   const muted = dark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)'
@@ -42,9 +46,30 @@ export function LayoutPanel({ visible, layout, dark, onLayoutChange, onClose }: 
         maxHeight: '70vh', overflow: 'auto',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <span style={{ color: fg, fontSize: 16, fontWeight: 700 }}>Aa 布局</span>
+          <span style={{ color: fg, fontSize: 16, fontWeight: 700 }}>主题设置</span>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: muted, fontSize: 20, padding: '4px 8px' }}>✕</button>
         </div>
+
+        {/* theme buttons */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+          {(['light', 'sepia', 'dark', 'custom'] as ThemeMode[]).map(t => (
+            <button key={t} onClick={() => onThemeChange(t)}
+              style={{
+                flex: 1, padding: '10px 6px', borderRadius: 10, cursor: 'pointer',
+                fontSize: 13, fontWeight: 600,
+                background: theme === t ? 'rgba(99,102,241,0.3)' : 'transparent',
+                border: `1px solid ${theme === t ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.1)'}`,
+                color: theme === t ? '#6366f1' : fg,
+              }}
+            >{t === 'light' ? '☀' : t === 'sepia' ? '☕' : t === 'dark' ? '◉' : '🎨'}</button>
+          ))}
+        </div>
+
+        {/* brightness slider */}
+        {slider('亮度', brightness, 20, 200, 5, '%', onBrightnessChange)}
+
+        {/* separator */}
+        <div style={{ height: 1, background: muted, margin: '12px 0' }} />
 
         {slider('字号', layout.fontSize, 75, 200, 5, '%', v => onLayoutChange({ fontSize: v }))}
         {slider('字重', layout.fontWeight, 300, 700, 100, '', v => onLayoutChange({ fontWeight: v }))}
