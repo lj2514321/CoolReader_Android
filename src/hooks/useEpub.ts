@@ -3,7 +3,7 @@ import ePub, { Book, Rendition } from 'epubjs'
 import { BookMeta, NavItem, ThemeMode, themeStyles, ReaderLayout, defaultLayout, Bookmark, Highlight, highlightColors, CustomTheme, defaultCustomTheme } from '../types'
 import { generateCustomThemeCSS } from '../utils/customTheme'
 import { applyPageAnimation } from '../utils/animation'
-import { loadProgress, loadReadingTime, loadSetting, saveSetting, saveReadingTime as persistReadingTimeToDB, saveBookReadingTime as persistBookReadingTime, loadBookReadingTime as loadBookReadingTimeFromDB, loadBookData, saveBookmark, removeBookmark, loadBookmarks as loadBookmarksFromDB, saveHighlight, removeHighlight as removeHighlightFromDB, loadHighlights as loadHighlightsFromDB } from '../utils/db'
+import { loadProgress, saveProgress, loadReadingTime, loadSetting, saveSetting, saveReadingTime as persistReadingTimeToDB, saveBookReadingTime as persistBookReadingTime, loadBookReadingTime as loadBookReadingTimeFromDB, loadBookData, saveBookmark, removeBookmark, loadBookmarks as loadBookmarksFromDB, saveHighlight, removeHighlight as removeHighlightFromDB, loadHighlights as loadHighlightsFromDB } from '../utils/db'
 import { useSearch } from './useSearch'
 
 export function useEpub() {
@@ -143,6 +143,8 @@ export function useEpub() {
       setSectionHref(href)
       setProgress(pct)
       setBookmarkCfi(bookmarksRef.current.some(b => b.cfi === cfi) ? cfi : '')
+      // 持久化阅读进度
+      saveProgress(currentFilePathRef.current, pct, cfi, idx).catch(e => console.warn('[sync] saveProgress failed', e))
     }
 
     const onRelocated = () => requestAnimationFrame(() => { sync(); applyLayout() })
@@ -508,6 +510,10 @@ export function useEpub() {
   const destroy = useCallback(async () => {
     await saveReadingTime()
     await saveBookReadingTimeFn()
+    // 离开前保存最终进度
+    if (currentFilePathRef.current) {
+      await saveProgress(currentFilePathRef.current, progressRef.current, cfiRef.current, indexRef.current).catch(e => console.warn('[destroy] saveProgress failed', e))
+    }
     renditionRef.current?.destroy()
     bookRef.current?.destroy()
   }, [saveReadingTime, saveBookReadingTimeFn])

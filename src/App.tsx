@@ -5,16 +5,19 @@ import { Library } from './components/Library'
 import { Reader } from './components/Reader'
 import type { WebDAVConfig, AIConfig } from './types'
 import { StatusBar, Style } from '@capacitor/status-bar'
+import { App as CapacitorApp } from '@capacitor/app'
 
 export default function App() {
   const [books, setBooks] = useState<BookRecord[]>([])
   const [readerPath, setReaderPath] = useState<string | null>(null)
+  const [readerExiting, setReaderExiting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [readingTime, setReadingTime] = useState(0)
   const [webdavConfig, setWebdavConfig] = useState<WebDAVConfig | null>(null)
   const [aiConfig, setAIConfig] = useState<AIConfig | null>(null)
   const [progressRecords, setProgressRecords] = useState<{ filePath: string; progress: number; updatedAt: number }[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const exitTimerRef = useRef<ReturnType<typeof setTimeout>>()
   const epub = useEpub()
   const [startupBehavior, setStartupBehavior] = useState<'library' | 'resume'>('library')
 
@@ -38,6 +41,7 @@ export default function App() {
       setProgressRecords(progressRecords)
       epub.initReadingTime(rt)
       StatusBar.setOverlaysWebView({ overlay: true })
+      StatusBar.setBackgroundColor({ color: '#0f0c29' })
       StatusBar.setStyle({ style: Style.Dark })
       const sb = behavior as 'library' | 'resume' | null
       if (sb === 'library' || sb === 'resume') setStartupBehavior(sb)
@@ -74,8 +78,13 @@ export default function App() {
   }, [])
 
   const handleBack = useCallback(() => {
-    epub.destroy()
-    setReaderPath(null)
+    setReaderExiting(true)
+    clearTimeout(exitTimerRef.current)
+    exitTimerRef.current = setTimeout(() => {
+      epub.destroy()
+      setReaderPath(null)
+      setReaderExiting(false)
+    }, 250)
   }, [epub])
 
   useEffect(() => {
@@ -86,11 +95,38 @@ export default function App() {
     return () => clearInterval(interval)
   }, [readerPath, epub])
 
+  useEffect(() => {
+    return () => clearTimeout(exitTimerRef.current)
+  }, [])
+
   const [bgGradient, setBgGradient] = useState('linear-gradient(135deg, #0f0c29, #302b63, #24243e)')
+
+  // sync gradient to #root so padding area blends seamlessly with content
+  useEffect(() => {
+    const root = document.getElementById('root')
+    if (root) root.style.background = bgGradient
+  }, [bgGradient])
+
+  useEffect(() => {
+    const handler = CapacitorApp.addListener('backButton', () => {
+      if (readerPath) {
+        handleBack()
+      } else {
+        CapacitorApp.exitApp()
+      }
+    })
+    return () => handler.remove()
+  }, [readerPath, handleBack])
 
   if (readerPath) {
     return (
-      <div style={{ height: '100%', background: bgGradient }}>
+      <div style={{
+        height: '100%',
+        transition: 'opacity 0.25s ease, transform 0.25s ease',
+        opacity: readerExiting ? 0 : 1,
+        transform: readerExiting ? 'translateY(24px)' : 'translateY(0)',
+        pointerEvents: readerExiting ? 'none' : 'auto',
+      }}>
         <Reader
           filePath={readerPath}
           meta={epub.meta}
