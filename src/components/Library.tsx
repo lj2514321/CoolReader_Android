@@ -8,6 +8,8 @@ import { BookShelf } from './BookShelf'
 import { SettingsPage } from './SettingsPage'
 import { StatsPage } from './StatsPage'
 
+const TRANSITION_DURATION = 200
+
 interface LibraryProps {
   books: BookRecord[]
   readingTime: number
@@ -51,19 +53,21 @@ export function Library({ books, readingTime, progressRecords, onOpenBook, onImp
     }).catch((e) => console.warn('[Library]', e))
   }, [onBgChange])
 
+  useEffect(() => () => clearTimeout(transRef.current), [])
+
   const switchPage = (target: LibPage) => {
-    if (target === libPage || transition !== 'idle') return
+    if (target === libPage) return
+    clearTimeout(transRef.current)
     if (target === 'settings' || libPage === 'settings') setSettingsResetKey(k => k + 1)
     const pageOrder: LibPage[] = ['books', 'stats', 'settings']
     const dir = pageOrder.indexOf(target) > pageOrder.indexOf(libPage) ? 'left' : 'right'
     setDirection(dir)
     setTransition('out')
-    clearTimeout(transRef.current)
     transRef.current = setTimeout(() => {
       setLibPage(target)
       setTransition('in')
-      transRef.current = setTimeout(() => setTransition('idle'), 400)
-    }, 400)
+      transRef.current = setTimeout(() => setTransition('idle'), TRANSITION_DURATION)
+    }, 0)
   }
 
   const pageAnim = (page: LibPage): { opacity: number; transform: string } => {
@@ -100,7 +104,7 @@ export function Library({ books, readingTime, progressRecords, onOpenBook, onImp
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden', zIndex: 1, overscrollBehavior: 'none' }}>
         <div style={{
           position: 'absolute', inset: 0,
-          transition: 'opacity 0.4s ease, transform 0.4s ease',
+          transition: 'opacity 0.2s ease, transform 0.2s ease',
           pointerEvents: transition !== 'idle' || libPage !== 'books' ? 'none' : 'auto',
           ...pageAnim('books'),
         }}>
@@ -109,7 +113,7 @@ export function Library({ books, readingTime, progressRecords, onOpenBook, onImp
 
         <div style={{
           position: 'absolute', inset: 0, overflow: 'hidden',
-          transition: 'opacity 0.4s ease, transform 0.4s ease',
+          transition: 'opacity 0.2s ease, transform 0.2s ease',
           pointerEvents: transition !== 'idle' || libPage !== 'stats' ? 'none' : 'auto',
           ...pageAnim('stats'),
         }}>
@@ -117,7 +121,7 @@ export function Library({ books, readingTime, progressRecords, onOpenBook, onImp
         </div>
         <div style={{
           position: 'absolute', inset: 0, overflow: 'hidden',
-          transition: 'opacity 0.4s ease, transform 0.4s ease',
+          transition: 'opacity 0.2s ease, transform 0.2s ease',
           pointerEvents: transition !== 'idle' || libPage !== 'settings' ? 'none' : 'auto',
           ...pageAnim('settings'),
         }}>
