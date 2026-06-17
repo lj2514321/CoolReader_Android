@@ -7,18 +7,25 @@ describe('streak.ts - Reading streak calculation', () => {
     expect(result).toEqual({ current: 0, longest: 0 })
   })
 
-  it('single day returns current=1, longest=1', () => {
-    const result = calcStreak([{ date: '2026-05-24', seconds: 300 }])
+  // Helper: format a Date as YYYY-MM-DD
+  const fmt = (d: Date) => d.toISOString().split('T')[0]
+  // Helper: get a Date offset from today by `offset` days
+  const dayOffset = (offset: number) => {
+    const d = new Date()
+    d.setDate(d.getDate() + offset)
+    return d
+  }
+
+  it('single day (today) returns current=1, longest=1', () => {
+    const result = calcStreak([{ date: fmt(dayOffset(0)), seconds: 300 }])
     expect(result).toEqual({ current: 1, longest: 1 })
   })
 
-  it('7 consecutive days returns current=7, longest=7', () => {
-    const records = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date('2026-05-24')
-      d.setDate(d.getDate() - i)
-      return { date: d.toISOString().split('T')[0], seconds: 300 }
-    }).reverse()
-
+  it('7 consecutive days ending today returns current=7, longest=7', () => {
+    const records = Array.from({ length: 7 }, (_, i) => ({
+      date: fmt(dayOffset(-i)),
+      seconds: 300,
+    }))
     const result = calcStreak(records)
     expect(result.current).toBe(7)
     expect(result.longest).toBe(7)
