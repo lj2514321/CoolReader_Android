@@ -19,6 +19,7 @@ A minimal EPUB reader built with **React 18 + TypeScript + Vite**, wrapped as a 
 - 🔄 WebDAV sync configuration
 - 🤖 AI assistant panel (configurable API endpoint)
 - 🎮 Bluetooth media key page-turn support
+- 📖 OPDS catalog browser for downloading books from online catalogs
 
 ## Tech Stack
 
@@ -99,7 +100,7 @@ Every push to `main` triggers a GitHub Actions workflow that:
 4. Builds debug APK
 5. Uploads the APK as a build artifact
 
-Pushing a tag like `v1.0.0` additionally creates a GitHub Release with the APK attached.
+Pushing a tag like `v2.1.0` additionally creates a GitHub Release with the APK attached.
 
 ### Download latest APK
 
@@ -107,3 +108,20 @@ Pushing a tag like `v1.0.0` additionally creates a GitHub Release with the APK a
 2. Click the latest successful workflow run
 3. Download the `coolreader-debug` artifact
 4. Install `app-debug.apk` on your Android device
+
+### Build locally
+
+**Prerequisites:**
+- Node.js 22+
+- Android Studio with bundled JDK 21 (set `JAVA_HOME` to Android Studio's `jbr` directory if building from terminal)
+
+```bash
+npm install
+npm run build
+npx cap sync android
+cd android
+JAVA_HOME="C:/Program Files/Android/Android Studio/jbr" ./gradlew assembleDebug
+# APK: android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+**Note:** Capacitor 8.3 + AGP 8.13 requires JDK 21. Using JDK 17 will fail with "invalid source release: 21".

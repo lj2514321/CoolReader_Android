@@ -1,5 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { colors } from '../utils/styles'
+
+const fontDisplay = "'Georgia', 'Noto Serif SC', 'Times New Roman', serif"
+const fontBody = "system-ui, -apple-system, 'Segoe UI', sans-serif"
 
 interface NoteDialogOptions {
   title?: string
@@ -17,9 +21,7 @@ export function showNoteDialog(options: NoteDialogOptions = {}): Promise<string 
     currentResolve = null
   }
   openNoteDialog(title, placeholder, initialValue)
-  return new Promise<string | null>(resolve => {
-    currentResolve = resolve
-  })
+  return new Promise<string | null>(resolve => { currentResolve = resolve })
 }
 
 function openNoteDialog(title: string, placeholder: string, initialValue: string) {
@@ -62,57 +64,65 @@ export function NoteDialog() {
     if (e.key === 'Escape') handleCancel()
   }
 
-  const overlayStyle: React.CSSProperties = {
-    position: 'fixed', inset: 0, zIndex: 100,
-    display: 'none', alignItems: 'center', justifyContent: 'center',
-    background: 'rgba(0,0,0,0.6)',
-  }
-
-  const dialogStyle: React.CSSProperties = {
-    width: '85%', maxWidth: 400,
-    padding: '24px 20px 20px',
-    borderRadius: 16,
-    background: 'rgba(15,12,41,0.92)',
-    backdropFilter: 'blur(24px) saturate(140%)',
-    WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-  }
-
-  const inputStyle: React.CSSProperties = {
-    width: '100%', boxSizing: 'border-box',
-    padding: '12px 14px', marginTop: 12,
-    borderRadius: 10,
-    background: 'rgba(255,255,255,0.06)',
-    border: '1px solid rgba(255,255,255,0.12)',
-    color: '#fff', fontSize: 15, outline: 'none',
-  }
-
-  const btnRow: React.CSSProperties = {
-    display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 18,
-  }
-
-  const btnBase: React.CSSProperties = {
-    padding: '9px 22px', borderRadius: 10, border: 'none',
-    fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
-  }
-
   return createPortal(
-    <div ref={dialogRef} style={overlayStyle} onClick={handleCancel}>
-      <div style={dialogStyle} onClick={e => e.stopPropagation()} onKeyDown={handleKeyDown}>
-        <span data-title style={{ fontSize: 17, fontWeight: 700, color: '#fff' }}>添加笔记</span>
-        <input
-          ref={inputRef}
-          style={inputStyle}
-          placeholder="输入笔记（可选）"
-        />
-        <div style={btnRow}>
-          <button onClick={handleCancel} style={{ ...btnBase, background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}>
-            取消
-          </button>
-          <button onClick={handleConfirm} style={{ ...btnBase, background: 'linear-gradient(135deg, #6366f1, #a855f7)', color: '#fff' }}>
-            确认
-          </button>
+    <div ref={dialogRef} style={{
+      position: 'fixed', inset: 0, zIndex: 100,
+      display: 'none', alignItems: 'center', justifyContent: 'center',
+      background: 'rgba(10,8,7,0.7)',
+      backdropFilter: 'blur(4px)',
+      WebkitBackdropFilter: 'blur(4px)',
+    }} onClick={handleCancel}>
+      <div onClick={e => e.stopPropagation()} onKeyDown={handleKeyDown} style={{
+        width: '85%', maxWidth: 400,
+        padding: '28px 24px 22px',
+        borderRadius: 2,
+        background: 'var(--cr-glass-bg, rgba(28, 23, 16, 0.92))',
+        backdropFilter: 'blur(20px) saturate(140%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(140%)',
+        border: `1px solid ${colors.borderAmber}`,
+        boxShadow: '0 16px 60px rgba(0,0,0,0.6)',
+        position: 'relative',
+      }}>
+        {/* corner-cut 印章 */}
+        <div style={{
+          position: 'absolute', top: 0, right: 0,
+          width: 20, height: 20,
+          background: colors.seal,
+          clipPath: 'polygon(100% 0, 100% 100%, 0 0)',
+          opacity: 0.85, pointerEvents: 'none',
+        }} />
+        <div style={{
+          position: 'absolute', top: 3, right: 3,
+          fontFamily: fontDisplay, fontSize: 6, color: '#0a0807',
+          fontWeight: 700, letterSpacing: '0.05em', pointerEvents: 'none',
+        }}>NOTE</div>
+
+        <span data-title style={{
+          fontFamily: fontDisplay, fontSize: 18, fontWeight: 700,
+          color: colors.text, letterSpacing: '-0.01em',
+        }}>添加笔记</span>
+        <input ref={inputRef} style={{
+          width: '100%', boxSizing: 'border-box',
+          padding: '12px 14px', marginTop: 16,
+          borderRadius: 2,
+          background: 'rgba(240,235,226,0.05)',
+          border: `1px solid ${colors.border}`,
+          fontFamily: fontBody,
+          color: colors.text, fontSize: 15, outline: 'none',
+        }} placeholder="输入笔记（可选）" />
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
+          <button onClick={handleCancel} style={{
+            padding: '9px 22px', borderRadius: 2, border: 'none',
+            background: 'rgba(240,235,226,0.08)', color: colors.textMuted,
+            fontFamily: fontBody, fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
+          }}>取消</button>
+          <button onClick={handleConfirm} style={{
+            padding: '9px 22px', borderRadius: 2, border: 'none',
+            background: colors.amber, color: '#0a0807',
+            fontFamily: fontDisplay, fontSize: 14, fontWeight: 700, cursor: 'pointer',
+            boxShadow: `0 4px 14px ${colors.amberGlow}`,
+            transition: 'transform 0.15s',
+          }}>确认</button>
         </div>
       </div>
     </div>,

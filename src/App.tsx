@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { loadAllBooks, deleteBook, saveBook, saveBookData, loadWebDAVConfig, loadAIConfig, loadReadingTime, loadAllProgress, loadSetting, type BookRecord } from './utils/db'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { loadAllBooks, deleteBook, saveBook, saveBookData, loadWebDAVConfig, loadAIConfig, loadReadingTime, loadAllProgress, loadSetting, saveSetting, type BookRecord } from './utils/db'
 import { useEpub } from './hooks/useEpub'
 import { Library } from './components/Library'
 import { Reader } from './components/Reader'
-import type { WebDAVConfig, AIConfig } from './types'
+import type { WebDAVConfig, AIConfig, CustomBgConfig } from './types'
 import { StatusBar, Style } from '@capacitor/status-bar'
 import { App as CapacitorApp } from '@capacitor/app'
 
@@ -41,7 +41,7 @@ export default function App() {
       setProgressRecords(progressRecords)
       epub.initReadingTime(rt)
       StatusBar.setOverlaysWebView({ overlay: true })
-      StatusBar.setBackgroundColor({ color: '#0f0c29' })
+      StatusBar.setBackgroundColor({ color: '#0a0807' })
       StatusBar.setStyle({ style: Style.Dark })
       const sb = behavior as 'library' | 'resume' | null
       if (sb === 'library' || sb === 'resume') setStartupBehavior(sb)
@@ -54,6 +54,7 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+
   const handleImport = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -63,7 +64,7 @@ export default function App() {
       const filePath = 'imported:' + file.name
       await saveBookData(filePath, data)
       const meta = await epub.extractMeta(filePath, data)
-      await saveBook({ filePath, title: meta.title, author: meta.author, cover: meta.cover })
+      await saveBook({ filePath, title: meta.title, author: meta.author, cover: meta.cover, format: 'epub', lastOpenedAt: Date.now() })
       setBooks(await loadAllBooks())
     } catch (err) {
       console.error('[App] import failed:', err)
@@ -99,13 +100,102 @@ export default function App() {
     return () => clearTimeout(exitTimerRef.current)
   }, [])
 
-  const [bgGradient, setBgGradient] = useState('linear-gradient(135deg, #0f0c29, #302b63, #24243e)')
+  const [bgGradient, setBgGradient] = useState('linear-gradient(160deg, #0a0807 0%, #13100c 50%, #1c1710 100%)')
+  const [glassBg, setGlassBg] = useState('rgba(28, 23, 16, 0.72)')
 
-  // sync gradient to #root so padding area blends seamlessly with content
+  const handleBgChange = useCallback((gradient: string, gBg?: string) => {
+    setBgGradient(gradient)
+    if (gBg) setGlassBg(gBg)
+  }, [])
+
+  // Custom background wallpaper configuration. When set (color/gradient/image),
+  // it overrides the gradient preset. Mirrors src/App.tsx in the source project.
+  const [customBg, setCustomBg] = useState<CustomBgConfig | null>(null)
+  useEffect(() => {
+    loadSetting('customBg').then(v => {
+      if (v) {
+        try {
+          const parsed = JSON.parse(v) as CustomBgConfig
+          setCustomBg(parsed)
+        } catch { /* corrupted — ignore */ }
+      }
+    }).catch(() => { /* ignore */ })
+  }, [])
+  const handleCustomBgChange = useCallback((config: CustomBgConfig) => {
+    setCustomBg(config)
+    saveSetting('customBg', JSON.stringify(config)).catch(e => console.warn('[App] saveSetting customBg failed', e))
+  }, [])
+
+  // Resolve the home-page background: custom wallpaper takes precedence over the
+  // preset gradient. When the user is on the library page, customBg styles are
+  // applied to the outer div; preset gradients apply to the #root so the safe-area
+  // padding area blends seamlessly.
+  const appBg = useMemo(() => {
+    if (customBg && customBg.type === 'color' && customBg.color) {
+      return customBg.color
+    }
+    if (customBg && customBg.type === 'image' && customBg.imageData) {
+      return `url(${customBg.imageData}) center/cover no-repeat`
+    }
+    if (customBg && customBg.type === 'gradient' && customBg.gradient) {
+      const g = customBg.gradient
+      if (g.type === 'solid' && g.color) return g.color
+      if (g.type === 'gradient' && g.gradientStops?.length) {
+        const stops = g.gradientStops.map(s => `${s.color} ${s.position}%`).join(', ')
+        if (g.gradientType === 'radial') {
+          return `radial-gradient(ellipse at center, ${stops})`
+        }
+        return `linear-gradient(${g.gradientAngle ?? 135}deg, ${stops})`
+      }
+    }
+    return bgGradient
+  }, [customBg, bgGradient])
+
+  // sync background to #root so padding area blends seamlessly with content.
+  // When a custom wallpaper is in effect, the inner div handles the background
+  // so we leave #root transparent for image wallpapers.
   useEffect(() => {
     const root = document.getElementById('root')
-    if (root) root.style.background = bgGradient
-  }, [bgGradient])
+    if (!root) return
+    if (readerPath) {
+      root.style.background = ''
+      return
+    }
+    const useRoot = !customBg || customBg.type === 'preset'
+    root.style.background = useRoot ? bgGradient : ''
+  }, [bgGradient, readerPath, customBg])
+
+  // Derive glass tint from customBg when not using a preset
+  const effectiveGlassBg = useMemo(() => {
+    if (!customBg || customBg.type === 'preset') return glassBg
+    if (customBg.type === 'color' && customBg.color) {
+      // Parse color and reduce opacity to create a glass tint
+      const c = customBg.color
+      if (c.startsWith('#')) {
+        const r = parseInt(c.slice(1, 3), 16)
+        const g = parseInt(c.slice(3, 5), 16)
+        const b = parseInt(c.slice(5, 7), 16)
+        return `rgba(${r}, ${g}, ${b}, 0.72)`
+      }
+      return c
+    }
+    if (customBg.type === 'gradient' && customBg.gradient?.gradientStops?.length) {
+      // Use the first stop color as glass base
+      const first = customBg.gradient.gradientStops[0].color
+      if (first.startsWith('#')) {
+        const r = parseInt(first.slice(1, 3), 16)
+        const g = parseInt(first.slice(3, 5), 16)
+        const b = parseInt(first.slice(5, 7), 16)
+        return `rgba(${r}, ${g}, ${b}, 0.72)`
+      }
+    }
+    return glassBg
+  }, [customBg, glassBg])
+
+  // Push glass tint to CSS variable so .cr-glass and inline glass() calls can use it
+  useEffect(() => {
+    document.documentElement.style.setProperty('--cr-glass-bg', effectiveGlassBg)
+  }, [effectiveGlassBg])
 
   useEffect(() => {
     const handler = CapacitorApp.addListener('backButton', () => {
@@ -120,8 +210,10 @@ export default function App() {
 
   if (readerPath) {
     return (
-      <div style={{
-        height: '100%',
+        <div style={{
+        position: 'fixed',
+        inset: 0,
+        overflow: 'hidden',
         transition: 'opacity 0.25s ease, transform 0.25s ease',
         opacity: readerExiting ? 0 : 1,
         transform: readerExiting ? 'translateY(24px)' : 'translateY(0)',
@@ -167,7 +259,11 @@ export default function App() {
   }
 
   return (
-    <div style={{ height: '100%', background: bgGradient }}>
+    <div style={{
+      height: '100%',
+      background: appBg,
+      transition: 'background 0.3s ease',
+    }}>
       <input
         ref={fileInputRef}
         type="file"
@@ -182,7 +278,9 @@ export default function App() {
         onOpenBook={handleOpenBook}
         onImport={() => fileInputRef.current?.click()}
         onDelete={handleDelete}
-        onBgChange={setBgGradient}
+        onBgChange={handleBgChange}
+        customBg={customBg}
+        onCustomBgChange={handleCustomBgChange}
         webdavConfig={webdavConfig}
         onWebDAVConfigChange={setWebdavConfig}
         aiConfig={aiConfig}

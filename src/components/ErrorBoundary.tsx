@@ -24,12 +24,12 @@ export class ErrorBoundary extends Component<Props, State> {
         <div
           style={{
             minHeight: '100vh',
-            backgroundColor: '#1a1a2e',
+            backgroundColor: '#0a0807',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#eee',
+            color: '#f0ebe2',
             fontFamily: 'system-ui, sans-serif',
           }}
         >
@@ -41,10 +41,11 @@ export class ErrorBoundary extends Component<Props, State> {
             style={{
               padding: '0.6rem 1.5rem',
               fontSize: '1rem',
-              backgroundColor: '#6c5ce7',
-              color: '#fff',
+              backgroundColor: '#d4923a',
+              color: '#0a0807',
               border: 'none',
-              borderRadius: '6px',
+              borderRadius: '10px',
+              fontWeight: 700,
               cursor: 'pointer',
             }}
           >

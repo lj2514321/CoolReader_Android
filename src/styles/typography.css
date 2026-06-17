@@ -1,0 +1,96 @@
+/**
+ * typography.css — CoolReader Android 字体系统
+ *
+ * type role      — 用途
+ * type scale      — 基于 1.25 (Major Third) 比例
+ * type weight     — 600 以上叫 bold，400 以下叫 light
+ * type tracking   — 大写字母用 tracked uppercase（视觉整齐）
+ */
+
+/* ── 字体族 ─────────────────────────────── */
+:root {
+  --cr-font-display: 'Georgia', 'Noto Serif SC', 'Times New Roman', serif;
+  --cr-font-body:    system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --cr-font-mono:   'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  --cr-font-kai:   'Noto Serif SC', 'KaiTi', 'STKaiti', serif;
+}
+
+/* ── 字号比例 (1.25 major third) ───────────
+   base: 14px
+   xs:  11.2px  (14 / 1.25²)
+   sm:  14px     (base)
+   md:  17.5px  (14 × 1.25)
+   lg:  21.9px  (14 × 1.25²)
+   xl:  27.4px  (14 × 1.25³)
+   2xl: 34.2px  (14 × 1.25⁴)
+*/
+
+:root {
+  --cr-text-xs:   11.2px;
+  --cr-text-sm:   14px;
+  --cr-text-md:   17.5px;
+  --cr-text-lg:   21.9px;
+  --cr-text-xl:   27.4px;
+  --cr-text-2xl:  34.2px;
+}
+
+/* ── 文字角色 ─────────────────────────────── */
+
+/* 书名 / 大标题 */
+.cr-display {
+  font-family: var(--cr-font-display);
+  font-size: var(--cr-text-lg);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--cr-text);
+}
+
+/* 章节标题 / Section Header */
+.cr-title {
+  font-family: var(--cr-font-display);
+  font-size: var(--cr-text-md);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  color: var(--cr-text);
+}
+
+/* 正文 / 说明文字 */
+.cr-body {
+  font-family: var(--cr-font-body);
+  font-size: var(--cr-text-sm);
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.6;
+  color: var(--cr-text);
+}
+
+/* 标签 / 按钮文字 */
+.cr-label {
+  font-family: var(--cr-font-body);
+  font-size: var(--cr-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cr-text-muted);
+}
+
+/* 数据 / 统计数字 */
+.cr-data {
+  font-family: var(--cr-font-mono);
+  font-size: var(--cr-text-sm);
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--cr-amber);
+}
+
+/* 大数字 (统计页面 streak 等) */
+.cr-stat {
+  font-family: var(--cr-font-mono);
+  font-size: var(--cr-text-2xl);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--cr-amber);
+  line-height: 1;
+}

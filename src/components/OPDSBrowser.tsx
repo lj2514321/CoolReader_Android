@@ -30,10 +30,8 @@ export function OPDSBrowser({ onClose, onBookSelected }: OPDSBrowserProps) {
     try {
       const resp = await fetch(feedUrl)
       const text = await resp.text()
-      // Parse XML — for now just show URL as title if parsing fails
-      // We'll use the opds.ts parser in Task 15
       setFeed({ title: feedUrl, entries: [] })
-    } catch (e) {
+    } catch {
       setError('无法获取 Feed')
     }
     setLoading(false)
@@ -42,88 +40,77 @@ export function OPDSBrowser({ onClose, onBookSelected }: OPDSBrowserProps) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 200,
-      background: 'rgba(0,0,0,0.9)',
+      background: 'rgba(10,8,7,0.92)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: 20,
     }}>
       <div style={{
-        background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
-        border: '1px solid rgba(168,85,247,0.3)',
+        background: 'rgba(10,8,7,0.97)',
+        border: '1px solid rgba(212,146,58,0.25)',
         borderRadius: 16,
         padding: 24,
-        width: '100%',
-        maxWidth: 600,
-        maxHeight: '80vh',
-        overflow: 'auto',
+        width: '100%', maxWidth: 600, maxHeight: '80vh',
+        overflowY: 'auto',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
       }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-          <span style={{ color: '#fff', fontSize: 16, fontWeight: 600 }}>OPDS 书库</span>
-          <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.5)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 20 }}>✕</button>
+          <span style={{ color: '#f0ebe2', fontSize: 16, fontWeight: 700 }}>OPDS 书库</span>
+          <button onClick={onClose} style={{ color: 'rgba(240,235,226,0.4)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 18 }}>✕</button>
         </div>
 
         {/* URL Input */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
           <input
-            type="url"
-            value={feedUrl}
-            onChange={(e) => setFeedUrl(e.target.value)}
+            type="url" value={feedUrl}
+            onChange={e => setFeedUrl(e.target.value)}
             placeholder="输入 OPDS Feed URL"
             style={{
               flex: 1,
-              background: 'rgba(255,255,255,0.1)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              borderRadius: 8,
-              padding: '10px 12px',
-              color: '#fff',
-              fontSize: 13,
+              background: 'rgba(240,235,226,0.07)',
+              border: '1px solid rgba(212,146,58,0.20)',
+              borderRadius: 10,
+              padding: '10px 14px',
+              color: '#f0ebe2', fontSize: 13,
               outline: 'none',
             }}
           />
-          <button
-            onClick={fetchFeed}
-            disabled={loading}
+          <button onClick={fetchFeed} disabled={loading}
             style={{
-              background: 'rgba(99,102,241,0.4)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 8,
-              padding: '10px 16px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              fontSize: 13,
+              background: loading ? 'rgba(212,146,58,0.4)' : '#d4923a',
+              color: loading ? 'rgba(240,235,226,0.5)' : '#0a0807',
+              fontWeight: 700, border: 'none', borderRadius: 10,
+              padding: '10px 18px', cursor: loading ? 'default' : 'pointer',
+              boxShadow: '0 4px 16px rgba(212,146,58,0.3)',
+              transition: 'all 0.15s',
             }}
-          >
-            {loading ? '加载中...' : '浏览'}
-          </button>
+          >{loading ? '加载中...' : '浏览'}</button>
         </div>
 
-        {/* Error */}
-        {error && (
-          <div style={{ color: '#f87171', fontSize: 12, marginBottom: 12 }}>{error}</div>
-        )}
+        {error && <div style={{ color: '#c0544a', fontSize: 12, marginBottom: 12 }}>{error}</div>}
 
-        {/* Feed Info */}
         {feed && (
           <div>
-            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginBottom: 8 }}>
+            <div style={{ color: 'rgba(240,235,226,0.5)', fontSize: 12, marginBottom: 8 }}>
               {feed.title} — {feed.entries.length} 本书
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {feed.entries.map((entry, i) => (
-                <div key={i} style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  borderRadius: 8,
-                  padding: '10px 12px',
-                  cursor: 'pointer',
-                  border: '1px solid transparent',
-                }}
+                <div key={i}
                   onClick={() => onBookSelected(entry.url, entry.title)}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(168,85,247,0.4)' }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'transparent' }}
+                  style={{
+                    background: 'rgba(240,235,226,0.04)',
+                    borderRadius: 10, padding: '12px 14px', cursor: 'pointer',
+                    border: '1px solid transparent',
+                    transition: 'border-color 0.12s',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(212,146,58,0.35)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'transparent' }}
                 >
-                  <div style={{ color: '#fff', fontSize: 13 }}>{entry.title}</div>
+                  <div style={{ color: '#f0ebe2', fontSize: 13, fontWeight: 600 }}>{entry.title}</div>
                   {entry.author && (
-                    <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, marginTop: 2 }}>{entry.author}</div>
+                    <div style={{ color: 'rgba(240,235,226,0.35)', fontSize: 11, marginTop: 3 }}>{entry.author}</div>
                   )}
                 </div>
               ))}
@@ -131,9 +118,8 @@ export function OPDSBrowser({ onClose, onBookSelected }: OPDSBrowserProps) {
           </div>
         )}
 
-        {/* Empty State */}
         {!feed && !loading && !error && (
-          <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13, textAlign: 'center', padding: '40px 0' }}>
+          <div style={{ color: 'rgba(240,235,226,0.25)', fontSize: 13, textAlign: 'center', padding: '40px 0' }}>
             输入 OPDS Feed URL 开始浏览
           </div>
         )}

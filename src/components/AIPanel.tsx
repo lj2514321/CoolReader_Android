@@ -18,18 +18,34 @@ interface AIPanelProps {
   onGetFullBookText: () => Promise<string>
 }
 
+const fontDisplay = "'Georgia', 'Noto Serif SC', 'Times New Roman', serif"
+const fontBody = "system-ui, -apple-system, 'Segoe UI', sans-serif"
+
 const themeBg: Record<string, string> = {
-  light: '#ece8f4',
-  sepia: '#f4ecd8',
-  dark: '#0f0c29',
+  light: '#f4ead5',
+  sepia: '#f0e8d0',
+  dark: '#0a0807',
 }
 
-const glass = (dark: boolean) => ({
-  background: dark ? 'rgba(15,12,41,0.85)' : 'rgba(255,255,255,0.85)',
-  backdropFilter: 'blur(20px) saturate(140%)',
-  WebkitBackdropFilter: 'blur(20px) saturate(140%)',
-  borderTop: `1px solid ${dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
-})
+/** 玻璃背景色跟随阅读主题 — v2: 极小圆角、更深底色 */
+const panelBase: Record<string, [number, number, number]> = {
+  dark:   [10, 8, 7],
+  sepia:  [240, 232, 208],
+  light:  [244, 234, 213],
+  custom: [10, 8, 7],
+}
+const glass = (theme: string) => {
+  const [r, g, b] = panelBase[theme] ?? panelBase.dark
+  const isLight = theme === 'light' || theme === 'sepia'
+  return {
+    background: `rgba(${r}, ${g}, ${b}, ${isLight ? 0.92 : 0.96})`,
+    backdropFilter: 'blur(20px) saturate(140%)',
+    WebkitBackdropFilter: 'blur(20px) saturate(140%)',
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
+    borderTop: `1px solid ${isLight ? 'rgba(212,146,58,0.20)' : 'rgba(240,235,226,0.10)'}`,
+  }
+}
 
 // Browser-based AI streaming (replaces Electron IPC)
 async function streamAI(
@@ -125,8 +141,8 @@ export function AIPanel({ visible, onClose, config, theme, onGetChapterText, onG
   const msgEndRef = useRef<HTMLDivElement>(null)
 
   const dark = theme === 'dark'
-  const fg = dark ? '#c8c8e0' : '#2d2b55'
-  const muted = dark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)'
+  const fg = dark ? '#f0ebe2' : '#3d2b1a'
+  const muted = dark ? 'rgba(240,235,226,0.45)' : 'rgba(61,43,26,0.45)'
 
   useEffect(() => {
     msgEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -199,25 +215,39 @@ export function AIPanel({ visible, onClose, config, theme, onGetChapterText, onG
           position: 'absolute', bottom: 0, left: 0, right: 0,
           height: '45vh', zIndex: 10,
           display: 'flex', flexDirection: 'column',
-          ...glass(dark),
+          ...glass(theme),
           transform: visible ? 'translateY(0)' : 'translateY(100%)',
           transition: 'transform 0.3s ease',
         }}>
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '10px 16px',
+            padding: '14px 20px',
             borderBottom: `1px solid ${dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
+            position: 'relative',
           }}>
-            <span style={{ color: fg, fontSize: 14, fontWeight: 700 }}>AI 助手</span>
+            {/* corner-cut 印章 */}
+            <div style={{
+              position: 'absolute', top: 0, right: 0,
+              width: 20, height: 20,
+              background: dark ? 'rgba(168,67,30,0.85)' : 'rgba(168,67,30,0.18)',
+              clipPath: 'polygon(100% 0, 100% 100%, 0 0)',
+              pointerEvents: 'none',
+            }} />
+            <span style={{
+              fontFamily: fontDisplay, fontSize: 18,
+              fontWeight: 700, color: fg, letterSpacing: '-0.01em',
+            }}>AI 助手</span>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               {!config && (
                 <span style={{ color: 'rgba(248,113,113,0.8)', fontSize: 11 }}>未配置 API</span>
               )}
               <button onClick={handleSummary} disabled={loading || !config}
                 style={{
-                  border: 'none', borderRadius: 8, padding: '6px 14px',
-                  fontSize: 12, fontWeight: 600, cursor: loading || !config ? 'default' : 'pointer',
-                  background: 'rgba(99,102,241,0.25)', color: fg,
+                  border: 'none', borderRadius: 2, padding: '6px 14px',
+                  fontFamily: fontDisplay, fontSize: 12, fontWeight: 600, cursor: loading || !config ? 'default' : 'pointer',
+                  background: 'rgba(212,146,58,0.20)',
+                  color: dark ? '#d4923a' : '#8a6030',
+                  border: '1px solid rgba(212,146,58,0.30)',
                   opacity: loading || !config ? 0.4 : 1,
                 }}
               >总结本章</button>
@@ -241,13 +271,14 @@ export function AIPanel({ visible, onClose, config, theme, onGetChapterText, onG
                 alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
                 maxWidth: '85%',
                 padding: '10px 14px',
-                borderRadius: 12,
+                borderRadius: 2,
+                fontFamily: fontBody,
                 fontSize: 13,
-                lineHeight: 1.5,
+                lineHeight: 1.6,
                 color: fg,
                 background: msg.role === 'user'
-                  ? 'rgba(99,102,241,0.15)'
-                  : (dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'),
+                  ? 'rgba(212,146,58,0.15)'
+                  : (dark ? 'rgba(240,235,226,0.05)' : 'rgba(61,43,26,0.04)'),
                 whiteSpace: 'pre-wrap',
               }}>
                 {msg.content}
@@ -258,9 +289,10 @@ export function AIPanel({ visible, onClose, config, theme, onGetChapterText, onG
                 alignSelf: 'flex-start',
                 maxWidth: '85%',
                 padding: '10px 14px',
-                borderRadius: 12,
+                borderRadius: 2,
+                fontFamily: fontBody,
                 fontSize: 13,
-                lineHeight: 1.5,
+                lineHeight: 1.6,
                 color: fg,
                 background: dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
                 whiteSpace: 'pre-wrap',
@@ -272,7 +304,7 @@ export function AIPanel({ visible, onClose, config, theme, onGetChapterText, onG
             {loading && !streamingText && (
               <div style={{
                 alignSelf: 'flex-start', padding: '10px 14px',
-                color: muted, fontSize: 13,
+                fontFamily: fontDisplay, color: muted, fontSize: 13,
               }}>
                 <span style={{ opacity: 0.5 }}>思考中...</span>
               </div>
@@ -281,7 +313,7 @@ export function AIPanel({ visible, onClose, config, theme, onGetChapterText, onG
           </div>
 
           <div style={{
-            display: 'flex', gap: 8, padding: '10px 16px',
+            display: 'flex', gap: 8, padding: '10px 16px 14px',
             borderTop: `1px solid ${dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
           }}>
             <input
@@ -293,18 +325,22 @@ export function AIPanel({ visible, onClose, config, theme, onGetChapterText, onG
               style={{
                 flex: 1,
                 background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                border: '1px solid transparent',
-                borderRadius: 10, padding: '10px 14px',
+                border: '1px solid rgba(240,235,226,0.12)',
+                borderRadius: 2, padding: '10px 14px',
+                fontFamily: fontBody,
                 color: fg, fontSize: 13, outline: 'none',
               }}
             />
             <button onClick={handleSend} disabled={!input.trim() || loading || !config}
               style={{
-                border: 'none', borderRadius: 10, padding: '10px 18px',
-                fontSize: 13, fontWeight: 600, cursor: loading || !config || !input.trim() ? 'default' : 'pointer',
-                background: 'linear-gradient(135deg, #667eea, #764ba2)',
-                color: '#fff',
+                border: 'none', borderRadius: 2, padding: '10px 18px',
+                fontFamily: fontDisplay, fontSize: 13, fontWeight: 700,
+                cursor: loading || !config || !input.trim() ? 'default' : 'pointer',
+                background: '#d4923a',
+                color: '#0a0807',
                 opacity: loading || !config || !input.trim() ? 0.5 : 1,
+                boxShadow: '0 4px 16px rgba(212,146,58,0.35)',
+                transition: 'all 0.15s',
               }}
             >发送</button>
           </div>

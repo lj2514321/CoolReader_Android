@@ -1,9 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import ePub, { Book, Rendition } from 'epubjs'
-import { BookMeta, NavItem, ThemeMode, themeStyles, ReaderLayout, defaultLayout, Bookmark, Highlight, highlightColors, CustomTheme, defaultCustomTheme } from '../types'
+import { BookMeta, NavItem, ThemeMode, themeStyles, ReaderLayout, defaultLayout, Bookmark, Highlight, highlightColors, CustomTheme, defaultCustomTheme, BookFormat } from '../types'
 import { generateCustomThemeCSS } from '../utils/customTheme'
 import { applyPageAnimation } from '../utils/animation'
-import { loadProgress, saveProgress, loadReadingTime, loadSetting, saveSetting, saveReadingTime as persistReadingTimeToDB, saveBookReadingTime as persistBookReadingTime, loadBookReadingTime as loadBookReadingTimeFromDB, loadBookData, saveBookmark, removeBookmark, loadBookmarks as loadBookmarksFromDB, saveHighlight, removeHighlight as removeHighlightFromDB, loadHighlights as loadHighlightsFromDB } from '../utils/db'
+import { loadProgress, saveProgress, loadReadingTime, loadSetting, saveSetting, saveReadingTime as persistReadingTimeToDB, saveBookReadingTime as persistBookReadingTime, loadBookReadingTime as loadBookReadingTimeFromDB, loadBookData, saveBookmark, removeBookmark, loadBookmarks as loadBookmarksFromDB, saveHighlight, removeHighlight as removeHighlightFromDB, loadHighlights as loadHighlightsFromDB, updateLastOpenedAt } from '../utils/db'
+import { getFormatFromPath } from '../utils/formatDetection'
 import { useSearch } from './useSearch'
 
 export function useEpub() {
@@ -46,12 +47,32 @@ export function useEpub() {
   }, [])
 
   const extractMeta = useCallback(async (filePath: string, data?: ArrayBuffer): Promise<BookMeta> => {
+    // Source v1.5.3: dispatch by format. Mobile target only opens epub, but
+    // detecting the format keeps the type contract aligned with future adapters.
+    const format: BookFormat = (() => {
+      try { return getFormatFromPath(filePath) } catch { return 'epub' }
+    })()
+
+    // TXT/MOBI on mobile: extractMeta is a filename-based fallback. Adapters
+    // would render real chapter content; the mobile target does not support
+    // those formats yet, so the metadata is best-effort.
+    if (format === 'txt') {
+      const base = filePath.split(/[\\/]/).pop()?.replace(/\.txt$/i, '') || 'Untitled'
+      return { title: base, author: 'Unknown' }
+    }
+    if (format === 'mobi') {
+      const base = filePath.split(/[\\/]/).pop()?.replace(/\.(mobi|azw3|prc)$/i, '') || 'Untitled'
+      return { title: base, author: 'Unknown' }
+    }
+
     if (!data) {
       data = await readFile(filePath)
     }
     const book = ePub(data)
     await book.ready
-    const { title, creator } = book.packaging.metadata
+    const meta = book.packaging?.metadata
+    const title = meta?.title || 'Untitled'
+    const creator = meta?.creator || 'Unknown'
     let cover: string | undefined
     try {
       const coverUrl = await book.coverUrl()
@@ -66,7 +87,7 @@ export function useEpub() {
       }
     } catch { console.warn('[extractMeta] cover fetch failed') }
     book.destroy()
-    return { title: title || 'Untitled', author: creator || 'Unknown', cover }
+    return { title, author: creator, cover }
   }, [readFile])
 
   const openBook = useCallback(async (filePath: string) => {
@@ -88,6 +109,10 @@ export function useEpub() {
     bookRef.current = book
     currentFilePathRef.current = filePath
     bookPathRef.current = filePath
+    // Source v1.5.x: track last-opened timestamp so the resume-on-startup
+    // behavior can pick the most recently read book. Fire-and-forget so we
+    // don't block book opening on this metadata write.
+    updateLastOpenedAt(filePath).catch(e => console.warn('[openBook] updateLastOpenedAt failed', e))
     await book.ready
 
     const today = new Date().toISOString().slice(0, 10)
@@ -124,12 +149,12 @@ export function useEpub() {
     })
     renditionRef.current = rendition
 
-    const spine = book.spine as any
+    const spine = book.spine
     const count = spine.length || spine.items?.length || 0
     totalSectionsRef.current = count
 
     const sync = () => {
-      const cur = rendition.currentLocation() as any
+      const cur = rendition.currentLocation()
       if (!cur?.start) return
       const idx = Number(cur.start.index) || 0
       const pct = count > 0 ? Math.round((idx / count) * 100) : 0
@@ -137,14 +162,15 @@ export function useEpub() {
       const cfi = cur.start.cfi || ''
       cfiRef.current = cfi
       indexRef.current = idx
-      const spineItems = (book.spine as any)?.items
+      const spineItems = book.spine.items
       const href = spineItems?.[idx]?.href || ''
       sectionHrefRef.current = href
       setSectionHref(href)
       setProgress(pct)
       setBookmarkCfi(bookmarksRef.current.some(b => b.cfi === cfi) ? cfi : '')
-      // 持久化阅读进度
-      saveProgress(currentFilePathRef.current, pct, cfi, idx).catch(e => console.warn('[sync] saveProgress failed', e))
+      // 持久化阅读进度 — pass cfi as both cfi and location (source v1.5.x format).
+      // chapterLabel is left empty here; resumed labels come from loadProgress on next open.
+      saveProgress(currentFilePathRef.current, pct, cfi, idx, undefined, cfi).catch(e => console.warn('[sync] saveProgress failed', e))
     }
 
     const onRelocated = () => requestAnimationFrame(() => { sync(); applyLayout() })
@@ -364,8 +390,7 @@ export function useEpub() {
     const book = bookRef.current
     if (!book) return ''
     try {
-      const spine = book.spine as any
-      const items = spine?.items || []
+      const items = book.spine.items || []
       let allText = ''
       for (const item of items) {
         if (!item.href) continue
@@ -454,7 +479,7 @@ export function useEpub() {
           const sel = iframe?.contentDocument?.getSelection()
           if (!sel || sel.isCollapsed) return
           const range = sel.getRangeAt(0)
-          const rend = renditionRef.current as any
+          const rend = renditionRef.current
           if (!rend || typeof rend.getCfiFromRange !== 'function') return
           try {
             const cfiRange = rend.getCfiFromRange(range)
@@ -498,8 +523,7 @@ export function useEpub() {
     saveSetting('readerLayout', JSON.stringify(next))
     if (patch.flow) {
       try {
-        const r = renditionRef.current as any
-        r?.flow(patch.flow)
+        renditionRef.current?.flow(patch.flow)
       } catch (e) {
         console.warn('[updateLayout] flow change failed:', e)
       }
@@ -510,9 +534,16 @@ export function useEpub() {
   const destroy = useCallback(async () => {
     await saveReadingTime()
     await saveBookReadingTimeFn()
-    // 离开前保存最终进度
+    // 离开前保存最终进度 — use sectionHrefRef as chapterLabel fallback
     if (currentFilePathRef.current) {
-      await saveProgress(currentFilePathRef.current, progressRef.current, cfiRef.current, indexRef.current).catch(e => console.warn('[destroy] saveProgress failed', e))
+      await saveProgress(
+        currentFilePathRef.current,
+        progressRef.current,
+        cfiRef.current,
+        indexRef.current,
+        sectionHrefRef.current,
+        cfiRef.current,
+      ).catch(e => console.warn('[destroy] saveProgress failed', e))
     }
     renditionRef.current?.destroy()
     bookRef.current?.destroy()

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { ReadingTimeRecord } from '../utils/streak'
+import { colors } from '../utils/styles'
 
 interface StreakHeatmapProps {
   records: ReadingTimeRecord[]
@@ -14,12 +15,14 @@ const COLS = 13
 const ROWS = 7
 const DAY_LABELS = ['一', '二', '三', '四', '五', '六', '日']
 
+/* Heatmap gradient anchored on amber (Direction A) instead of pure orange.
+   The intensity rises with reading minutes; hue stays in the warm range. */
 function getColor(minutes: number): string {
-  if (minutes === 0) return 'rgba(255,255,255,0.05)'
-  if (minutes <= 10) return '#fff3e0'
-  if (minutes <= 30) return '#ffcc80'
-  if (minutes <= 60) return '#ff9800'
-  return '#bf360c'
+  if (minutes === 0) return 'rgba(240,235,226,0.06)'
+  if (minutes <= 10) return 'rgba(212,146,58,0.25)'
+  if (minutes <= 30) return 'rgba(212,146,58,0.55)'
+  if (minutes <= 60) return 'rgba(212,146,58,0.85)'
+  return '#d4923a'
 }
 
 function formatDate(dateStr: string): string {
@@ -34,13 +37,28 @@ interface CellData {
   row: number
 }
 
+const FlameIcon = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={colors.amber} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+  </svg>
+)
+
+const TrophyIcon = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={colors.amber} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+    <path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+    <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+    <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+  </svg>
+)
+
 export function StreakHeatmap({ records, current, longest }: StreakHeatmapProps) {
   const [selectedCell, setSelectedCell] = useState<CellData | null>(null)
   const [hoveredCell, setHoveredCell] = useState<CellData | null>(null)
 
   const today = new Date()
   const startDate = new Date(today)
-  startDate.setDate(startDate.getDate() - (DAYS - 1))
+  startDate.setDate(today.getDate() - (DAYS - 1))
 
   const cells: CellData[] = []
   const recordMap = new Map(records.map(r => [r.date, Math.round(r.seconds / 60)]))
@@ -78,32 +96,41 @@ export function StreakHeatmap({ records, current, longest }: StreakHeatmapProps)
 
   return (
     <div style={{
-      background: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(168,85,247,0.08) 100%)',
-      borderRadius: 14,
-      border: '1px solid rgba(168,85,247,0.12)',
-      padding: '20px 16px 16px',
+      background: 'rgba(19, 16, 12, 0.4)',
+      borderRadius: 2,
+      border: `1px solid ${colors.border}`,
+      padding: '20px 18px 18px',
+      boxShadow: '0 2px 12px rgba(0,0,0,0.3)',
     }}>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 6,
-          background: 'rgba(255,152,0,0.2)',
-          border: '1px solid rgba(255,152,0,0.4)',
-          borderRadius: 20, padding: '6px 14px',
+          background: colors.amberDim,
+          border: `1px solid ${colors.borderAmber}`,
+          borderRadius: 999, padding: '6px 14px',
         }}>
-          <span style={{ fontSize: 14 }}>🔥</span>
-          <span style={{ color: '#ffcc80', fontSize: 13, fontWeight: 600 }}>
-            当前连击: {current}天
+          <FlameIcon />
+          <span style={{
+            color: colors.amber,
+            fontFamily: "'Georgia', 'Noto Serif SC', serif",
+            fontSize: 13, fontWeight: 700, letterSpacing: '-0.01em',
+          }}>
+            连击 {current} 天
           </span>
         </div>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 6,
-          background: 'rgba(191,54,12,0.2)',
-          border: '1px solid rgba(191,54,12,0.4)',
-          borderRadius: 20, padding: '6px 14px',
+          background: 'rgba(240,235,226,0.04)',
+          border: `1px solid ${colors.border}`,
+          borderRadius: 999, padding: '6px 14px',
         }}>
-          <span style={{ fontSize: 14 }}>🏆</span>
-          <span style={{ color: '#ff8a65', fontSize: 13, fontWeight: 600 }}>
-            最长连击: {longest}天
+          <TrophyIcon />
+          <span style={{
+            color: colors.textMuted,
+            fontFamily: "'Georgia', 'Noto Serif SC', serif",
+            fontSize: 13, fontWeight: 700, letterSpacing: '-0.01em',
+          }}>
+            最长 {longest} 天
           </span>
         </div>
       </div>
@@ -113,8 +140,8 @@ export function StreakHeatmap({ records, current, longest }: StreakHeatmapProps)
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           height: 120, gap: 8,
         }}>
-          <span style={{ fontSize: 28 }}>📭</span>
-          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>还没有阅读记录</span>
+          <FlameIcon size={28} />
+          <span style={{ color: colors.textMuted, fontSize: 13 }}>还没有阅读记录</span>
         </div>
       ) : (
         <div style={{ position: 'relative', width: '100%', overflowX: 'auto' }}>
@@ -122,7 +149,7 @@ export function StreakHeatmap({ records, current, longest }: StreakHeatmapProps)
             <div style={{ display: 'flex', flexDirection: 'column', gap: GAP, marginRight: 8, height: totalHeight }}>
               {[1, 3, 5].map(r => (
                 <div key={r} style={{ height: CELL, display: 'flex', alignItems: 'center' }}>
-                  <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)' }}>{DAY_LABELS[r]}</span>
+                  <span style={{ fontSize: 9, color: colors.textFaint }}>{DAY_LABELS[r]}</span>
                 </div>
               ))}
             </div>
@@ -134,7 +161,7 @@ export function StreakHeatmap({ records, current, longest }: StreakHeatmapProps)
                     position: 'absolute',
                     left: (ml.col * (CELL + GAP) + GAP),
                     fontSize: 10,
-                    color: 'rgba(255,255,255,0.35)',
+                    color: colors.textFaint,
                   }}>
                     {ml.month}
                   </div>
@@ -166,6 +193,8 @@ export function StreakHeatmap({ records, current, longest }: StreakHeatmapProps)
                         borderRadius: 2,
                         background: getColor(cell.minutes),
                         cursor: 'pointer',
+                        boxShadow: cell.minutes > 60 ? `0 0 4px ${colors.amberGlow}` : 'none',
+                        transition: 'transform 0.1s',
                       }}
                     />
                   )
@@ -179,11 +208,15 @@ export function StreakHeatmap({ records, current, longest }: StreakHeatmapProps)
               position: 'absolute',
               left: (LABEL_WIDTH + tooltipCell.col * (CELL + GAP) + GAP),
               top: (18 + tooltipCell.row * (CELL + GAP) + GAP),
-              background: 'rgba(0,0,0,0.85)',
-              color: '#fff',
-              fontSize: 11,
-              padding: '4px 8px',
-              borderRadius: 6,
+              background: 'var(--cr-glass-bg, rgba(28, 23, 16, 0.92))',
+              backdropFilter: 'blur(20px) saturate(140%)',
+              WebkitBackdropFilter: 'blur(20px) saturate(140%)',
+              color: colors.text,
+              fontFamily: "'Georgia', 'Noto Serif SC', serif",
+              fontSize: 12,
+              padding: '5px 10px',
+              borderRadius: 2,
+              border: `1px solid ${colors.borderAmber}`,
               pointerEvents: 'none',
               whiteSpace: 'nowrap',
               zIndex: 10,

@@ -1,14 +1,18 @@
 import { highlightColors } from '../types'
+import { colors } from '../utils/styles'
 
 interface SelectionToolbarProps {
   visible: boolean
+  theme?: string
   bounds: { top: number; left: number; width: number; height: number } | null
   onSelectColor: (color: string) => void
   onClear: () => void
 }
 
-export function SelectionToolbar({ visible, bounds, onSelectColor, onClear }: SelectionToolbarProps) {
+export function SelectionToolbar({ visible, theme = 'dark', bounds, onSelectColor, onClear }: SelectionToolbarProps) {
   if (!visible || !bounds) return null
+
+  const dark = theme === 'dark' || theme === 'custom'
 
   const toolbarStyle: React.CSSProperties = {
     position: 'fixed',
@@ -19,12 +23,12 @@ export function SelectionToolbar({ visible, bounds, onSelectColor, onClear }: Se
     display: 'flex',
     gap: 6,
     padding: '8px 14px',
-    borderRadius: 14,
-    background: 'rgba(15,12,41,0.9)',
-    backdropFilter: 'blur(16px) saturate(140%)',
-    WebkitBackdropFilter: 'blur(16px) saturate(140%)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+    borderRadius: 2,
+    background: dark ? 'rgba(10,8,7,0.97)' : 'rgba(244,234,213,0.95)',
+    backdropFilter: 'blur(20px) saturate(140%)',
+    WebkitBackdropFilter: 'blur(20px) saturate(140%)',
+    border: `1px solid ${dark ? 'rgba(212,146,58,0.25)' : 'rgba(212,146,58,0.30)'}`,
+    boxShadow: dark ? '0 8px 32px rgba(0,0,0,0.5)' : '0 8px 32px rgba(0,0,0,0.15)',
   }
 
   return (
@@ -34,18 +38,20 @@ export function SelectionToolbar({ visible, bounds, onSelectColor, onClear }: Se
           onClick={() => onSelectColor(hc.color)}
           style={{
             width: 28, height: 28, borderRadius: '50%', cursor: 'pointer',
-            background: hc.color, border: '2px solid rgba(255,255,255,0.2)',
-            transition: 'transform 0.1s',
-            padding: 0,
+            background: hc.color, border: `2px solid ${colors.border}`,
+            transition: 'transform 0.1s, box-shadow 0.1s',
+            padding: 0, boxShadow: `0 0 6px ${hc.color}80`,
           }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.12)' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)' }}
           title={hc.label}
         />
       ))}
-      <div style={{ width: 1, background: 'rgba(255,255,255,0.1)', margin: '2px 4px' }} />
+      <div style={{ width: 1, background: colors.border, margin: '2px 4px' }} />
       <button onClick={onClear}
         style={{
           background: 'none', border: 'none', cursor: 'pointer',
-          color: 'rgba(255,255,255,0.4)', fontSize: 16, padding: '0 2px',
+          color: colors.textMuted, fontSize: 16, padding: '0 2px',
         }}
         title="取消"
       >✕</button>

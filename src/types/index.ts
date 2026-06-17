@@ -13,7 +13,29 @@ export interface NavItem {
 export interface BookEntry {
   filePath: string
   meta: BookMeta
+  lastOpenedAt?: number
+  progress?: number
+  chapterLabel?: string
+  format?: BookFormat
 }
+
+/** Supported ebook formats. Mobile target focuses on 'epub' but the type
+ *  system remains aligned with source so future adapters (txt/mobi) can plug in. */
+export type BookFormat = 'epub' | 'txt' | 'mobi'
+
+/** Wallpaper / home-page background configuration. */
+export type BgType = 'preset' | 'color' | 'gradient' | 'image'
+
+export interface CustomBgConfig {
+  type: BgType
+  presetKey?: string
+  color?: string
+  gradient?: CustomTheme
+  imageData?: string
+  imageFit?: 'cover'
+}
+
+export const defaultCustomBg: CustomBgConfig = { type: 'preset', presetKey: 'warmBlack' }
 
 export interface WebDAVConfig {
   url: string
@@ -85,7 +107,11 @@ export const fontFamilies = [
 export interface Highlight {
   id?: number
   filePath: string
+  /** @deprecated kept for backward compat with existing epub highlights */
   cfiRange: string
+  /** Universal position string. For epub: CFI range. For txt/mobi: 'chapterIdx:startOffset-endOffset'.
+   *  Optional because pre-v5 records may not have it (falls back to cfiRange). */
+  location?: string
   text: string
   color: string
   note?: string
@@ -103,6 +129,9 @@ export interface Bookmark {
   id?: number
   filePath: string
   cfi: string
+  /** Universal position string. For epub: CFI. For txt/mobi: 'chapterIdx:charOffset'.
+   *  Optional because pre-v5 records may not have it (falls back to cfi). */
+  location?: string
   label: string
   createdAt: number
 }
@@ -144,23 +173,23 @@ export interface SearchResult {
 
 export const defaultCustomTheme: CustomTheme = {
   type: 'solid',
-  color: 'rgba(255,255,255,1)',
+  color: 'rgba(244,234,213,1)',
 }
 
 export const presetGradients: { label: string; stops: GradientStop[]; angle: number; type: GradientType }[] = [
+  { label: '琥珀', stops: [{ color: 'rgba(212,146,58,0.90)', position: 0 }, { color: 'rgba(61,43,26,0.95)', position: 100 }], angle: 160, type: 'linear' },
+  { label: '暖夜', stops: [{ color: 'rgba(28,23,16,0.95)', position: 0 }, { color: 'rgba(10,8,7,0.98)', position: 100 }], angle: 180, type: 'radial' },
+  { label: '日出', stops: [{ color: 'rgba(255,183,77,0.9)', position: 0 }, { color: 'rgba(245,158,66,0.95)', position: 100 }], angle: 180, type: 'linear' },
   { label: '碧海', stops: [{ color: 'rgba(59,130,246,0.85)', position: 0 }, { color: 'rgba(16,42,67,0.95)', position: 100 }], angle: 135, type: 'linear' },
   { label: '极光', stops: [{ color: 'rgba(34,197,94,0.8)', position: 0 }, { color: 'rgba(6,78,59,0.9)', position: 100 }], angle: 135, type: 'linear' },
-  { label: '日出', stops: [{ color: 'rgba(255,183,77,0.9)', position: 0 }, { color: 'rgba(245,158,66,0.95)', position: 100 }], angle: 180, type: 'linear' },
-  { label: '极光紫', stops: [{ color: 'rgba(167,139,250,0.85)', position: 0 }, { color: 'rgba(109,40,217,0.9)', position: 100 }], angle: 120, type: 'linear' },
-  { label: '暗夜蓝', stops: [{ color: 'rgba(30,41,59,0.95)', position: 0 }, { color: 'rgba(15,23,42,0.98)', position: 100 }], angle: 0, type: 'radial' },
-  { label: '晨雾', stops: [{ color: 'rgba(241,245,249,0.9)', position: 0 }, { color: 'rgba(226,232,240,0.85)', position: 100 }], angle: 135, type: 'linear' },
-  { label: '森林', stops: [{ color: 'rgba(22,101,52,0.85)', position: 0 }, { color: 'rgba(5,46,22,0.95)', position: 100 }], angle: 135, type: 'linear' },
   { label: '玫瑰', stops: [{ color: 'rgba(244,114,182,0.85)', position: 0 }, { color: 'rgba(157,39,105,0.9)', position: 100 }], angle: 135, type: 'linear' },
+  { label: '森林', stops: [{ color: 'rgba(22,101,52,0.85)', position: 0 }, { color: 'rgba(5,46,22,0.95)', position: 100 }], angle: 135, type: 'linear' },
+  { label: '极光紫', stops: [{ color: 'rgba(167,139,250,0.85)', position: 0 }, { color: 'rgba(109,40,217,0.9)', position: 100 }], angle: 120, type: 'linear' },
 ]
 
 export const themeStyles: Record<string, string> = {
-  light: 'body.light { background: #ffffff !important; color: #000000 !important; }',
-  dark: 'body.dark { background: #1a1a2e !important; color: #e0e0e0 !important; }',
+  light: 'body.light { background: #ffffff !important; color: #1a1a1a !important; }',
+  dark: 'body.dark { background: #0a0807 !important; color: #f0ebe2 !important; }',
   sepia: 'body.sepia { background: #f5e6c8 !important; color: #5b4636 !important; }',
-  custom: 'body.custom { background: rgba(255,255,255,0.98) !important; color: #1a1a2e !important; }',
+  custom: 'body.custom { background: rgba(244,234,213,0.98) !important; color: #3d2b1a !important; }',
 }

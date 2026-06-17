@@ -51,17 +51,46 @@ const themes: { key: ThemeMode; icon: string }[] = [
 ]
 
 const themeBg: Record<ThemeMode, string> = {
-  light: '#ece8f4',
-  sepia: '#f4ecd8',
-  dark: '#0a0a1a',
-  custom: '#0a0a1a',
+  light: '#f4ead5',     /* 暖纸白 */
+  sepia: '#f0e8d0',    /* 暖黄 */
+  dark: '#0a0807',      /* 暖黑 */
+  custom: '#0a0807',
 }
 
-const glass = (dark: boolean) => ({
-  background: dark ? 'rgba(15,12,41,0.45)' : 'rgba(255,255,255,0.55)',
-  backdropFilter: 'blur(20px) saturate(140%)',
-  WebkitBackdropFilter: 'blur(20px) saturate(140%)',
-})
+const AMBER = '#d4923a'
+const AMBER_DIM = 'rgba(212,146,58,0.15)'
+const AMBER_GLOW = 'rgba(212,146,58,0.35)'
+const BORDER = 'rgba(240,235,226,0.10)'
+
+/** 阅读主题对应的基础色 */
+const themeBase: Record<string, [number, number, number]> = {
+  dark:   [10, 8, 7],
+  sepia:  [240, 232, 208],
+  light:  [244, 234, 213],
+  custom: [10, 8, 7],
+}
+const getThemeRgb = (t: string) => themeBase[t] ?? themeBase.dark
+
+/** 玻璃背景色跟随阅读主题 */
+const glassForTheme = (theme: string) => {
+  const [r, g, b] = getThemeRgb(theme)
+  const isLight = theme === 'light' || theme === 'sepia'
+  return {
+    background: `rgba(${r}, ${g}, ${b}, ${isLight ? 0.85 : 0.92})`,
+    backdropFilter: 'blur(20px) saturate(140%)',
+    WebkitBackdropFilter: 'blur(20px) saturate(140%)',
+  }
+}
+
+/** 底栏 / 弹出面板（更高不透明度） */
+const panelBg = (theme: string) => {
+  const [r, g, b] = getThemeRgb(theme)
+  const isLight = theme === 'light' || theme === 'sepia'
+  return `rgba(${r}, ${g}, ${b}, ${isLight ? 0.90 : 0.94})`
+}
+
+const fontDisplay = "'Georgia', 'Noto Serif SC', 'Times New Roman', serif"
+const fontBody = "system-ui, -apple-system, 'Segoe UI', sans-serif"
 
 const btn = (fg: string) => ({
   background: 'none',
@@ -71,11 +100,11 @@ const btn = (fg: string) => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  borderRadius: 10,
+  borderRadius: 2,
   padding: '7px 14px',
   fontSize: 13,
+  fontFamily: fontDisplay,
   fontWeight: 600 as const,
-  opacity: 0.7,
   transition: 'all 0.15s ease',
 })
 
@@ -224,11 +253,11 @@ export function Reader({
     clearTimeout(hideTimer.current)
   }
 
-  const dark = theme === 'dark'
-  const fg = dark ? '#c8c8e0' : '#2d2b55'
+  const dark = theme === 'dark' || theme === 'custom'
+  const fg = dark ? '#f0ebe2' : '#3d2b1a'
 
   return (
-    <div ref={containerRef} style={{ position: 'fixed', inset: 0, zIndex: 100, background: themeBg[theme], overflow: 'hidden' }}>
+    <div ref={containerRef} style={{ position: 'absolute', inset: 0, zIndex: 100, background: themeBg[theme], overflow: 'hidden' }}>
       <div id="viewer" style={{ position: 'absolute', inset: 0, filter: `brightness(${brightness / 100})`, transition: 'filter 0.2s', paddingTop: 'max(env(safe-area-inset-top), 48px)', paddingBottom: 'max(env(safe-area-inset-bottom), 24px)' }} />
       <div
         onClick={handleViewerClick}
@@ -268,11 +297,11 @@ export function Reader({
       }}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 8,
-          borderRadius: 14, padding: '8px 12px',
-          ...glass(dark),
+          borderRadius: 2, padding: '8px 12px',
+          ...glassForTheme(theme),
         }}>
           <button onClick={onBack} style={btn(fg)}>← 返回</button>
-          <span style={{ flex: 1, fontWeight: 600, fontSize: 14, color: fg, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ flex: 1, fontFamily: fontDisplay, fontWeight: 600, fontSize: 14, color: fg, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>
             {meta?.title || ''}
           </span>
         </div>
@@ -283,9 +312,9 @@ export function Reader({
         position: 'absolute', bottom: 0, left: 0, right: 0,
         padding: '6px 8px',
         paddingBottom: 'calc(8px + max(env(safe-area-inset-bottom), 24px))',
-        background: dark ? 'rgba(20,20,40,0.92)' : 'rgba(245,243,250,0.92)',
-        border: `1px solid ${dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
-        borderRadius: 14,
+        background: panelBg(theme),
+        border: `1px solid ${dark ? BORDER : 'rgba(212,146,58,0.20)'}`,
+        borderRadius: 2,
         opacity: showUI ? 1 : 0,
         pointerEvents: showUI ? 'auto' : 'none',
         transition: 'opacity 0.3s ease',
@@ -296,7 +325,9 @@ export function Reader({
           display: 'flex', alignItems: 'center', gap: 8,
           padding: '4px 6px',
         }}>
-          <button onClick={onPrev} style={{...btn(fg), minWidth: 44, minHeight: 44}}>◂</button>
+          <button onClick={onPrev} style={{...btn(fg), minWidth: 44, minHeight: 44}}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={fg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
 
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
             <div
@@ -306,41 +337,77 @@ export function Reader({
               }}
               style={{
                 flex: 1, height: 5, borderRadius: 3,
-                background: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                background: dark ? 'rgba(240,235,226,0.08)' : 'rgba(0,0,0,0.06)',
                 cursor: 'pointer', overflow: 'hidden',
               }}
             >
               <div style={{
                 width: `${progress}%`, height: '100%',
-                background: `linear-gradient(90deg, #6366f1, #a855f7)`,
+                background: `linear-gradient(90deg, ${AMBER}, rgba(180,110,40,0.8))`,
                 borderRadius: 3, transition: 'width 0.2s ease',
                 position: 'relative',
               }}>
+                {/* Amber dot */}
                 <div style={{
                   position: 'absolute', right: -4, top: '50%', transform: 'translateY(-50%)',
-                  width: 10, height: 10, borderRadius: '50%',
-                  background: '#a855f7', boxShadow: '0 0 6px rgba(168,85,247,0.5)',
-                  opacity: 0.6,
+                  width: 9, height: 9, borderRadius: '50%',
+                  background: AMBER, boxShadow: `0 0 8px ${AMBER_GLOW}`,
                 }} />
               </div>
             </div>
-            <span style={{ fontSize: 11, fontWeight: 600, color: fg, opacity: 0.5, minWidth: 32, textAlign: 'right' }}>{progress}%</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: dark ? AMBER : '#8a6a30', fontFamily: fontDisplay, minWidth: 32, textAlign: 'right' }}>{progress}%</span>
           </div>
 
-          <button onClick={onNext} style={{...btn(fg), minWidth: 44, minHeight: 44}}>▸</button>
+          <button onClick={onNext} style={{...btn(fg), minWidth: 44, minHeight: 44}}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={fg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
         </div>
 
         {/* Row 2: tools */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          gap: 12,
+          gap: 6,
           marginTop: 2,
           padding: '6px 4px',
         }}>
-          <button onClick={() => setShowSidebar(v => !v)} style={btn(fg)}>📑 目录</button>
-          <button onClick={() => setShowAa(v => !v)} style={btn(fg)}>Aa 主题</button>
-          <button onClick={() => setShowMarkers(v => !v)} style={btn(fg)}>🖍️ 笔记</button>
-          <button onClick={() => setShowToolsPopup(v => !v)} style={btn(fg)}>🛠️ 工具</button>
+          {/* Amber bookmark icon — the visual signature of Direction A */}
+          <button onClick={() => setShowSidebar(v => !v)} style={{
+            ...btn(fg),
+            background: dark ? AMBER_DIM : 'rgba(212,146,58,0.08)',
+            border: `1px solid ${dark ? 'rgba(212,146,58,0.25)' : 'rgba(212,146,58,0.20)'}`,
+            borderRadius: 2,
+            padding: '7px 14px',
+          }}>
+            {/* Bookmark SVG */}
+            <svg width="15" height="15" viewBox="0 0 24 24" fill={AMBER} stroke="none" style={{ marginRight: 5 }}>
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span style={{ fontSize: 12, fontWeight: 600 }}>目录</span>
+          </button>
+
+          <button onClick={() => setShowAa(v => !v)} style={btn(fg)}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={fg} strokeWidth="2" strokeLinecap="round" style={{ marginRight: 5 }}>
+              <polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/>
+              <line x1="12" y1="4" x2="12" y2="20"/>
+            </svg>
+            <span style={{ fontSize: 12, fontWeight: 600 }}>Aa</span>
+          </button>
+
+          <button onClick={() => setShowMarkers(v => !v)} style={btn(fg)}>
+            {/* Highlighter SVG */}
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={fg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 5 }}>
+              <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/>
+            </svg>
+            <span style={{ fontSize: 12, fontWeight: 600 }}>笔记</span>
+          </button>
+
+          <button onClick={() => setShowToolsPopup(v => !v)} style={btn(fg)}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={fg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 5 }}>
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            <span style={{ fontSize: 12, fontWeight: 600 }}>工具</span>
+          </button>
         </div>
 
         {/* Tools Popup */}
@@ -350,22 +417,40 @@ export function Reader({
               position: 'fixed', inset: 0, zIndex: 9, background: 'transparent',
             }} />
             <div style={{
-              position: 'absolute', bottom: 'calc(60px + max(env(safe-area-inset-bottom), 24px))', right: 16,
+              position: 'absolute', bottom: 'calc(64px + max(env(safe-area-inset-bottom), 24px))', right: 16,
               zIndex: 10,
-              borderRadius: 12, padding: '8px',
-              background: dark ? 'rgba(20,20,40,0.95)' : 'rgba(245,243,250,0.95)',
-              border: `1px solid ${dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+              borderRadius: 2, padding: '8px',
+              background: panelBg(theme),
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              border: `1px solid ${dark ? BORDER : 'rgba(212,146,58,0.25)'}`,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
               display: 'flex', flexDirection: 'column', gap: 4,
             }}>
               <button
                 onClick={() => { setShowSearch(true); setShowToolsPopup(false) }}
-                style={{...btn(fg), justifyContent: 'flex-start', gap: 6, padding: '8px 12px'}}
-              >🔍 搜索</button>
+                style={{
+                  ...btn(fg), justifyContent: 'flex-start', gap: 8, padding: '10px 14px',
+                  borderRadius: 2,
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={fg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>搜索</span>
+              </button>
               <button
                 onClick={() => { setShowAI(true); setShowToolsPopup(false) }}
-                style={{...btn(fg), justifyContent: 'flex-start', gap: 6, padding: '8px 12px'}}
-              >🤖 AI</button>
+                style={{
+                  ...btn(fg), justifyContent: 'flex-start', gap: 8, padding: '10px 14px',
+                  borderRadius: 2,
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={fg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>AI 助手</span>
+              </button>
             </div>
           </>
         )}
@@ -382,6 +467,7 @@ export function Reader({
 
       <SelectionToolbar
         visible={!!selectionInfo}
+        theme={theme}
         bounds={selectionInfo?.bounds ?? null}
         onSelectColor={onAddHighlight}
         onClear={onClearSelection}
@@ -395,9 +481,11 @@ export function Reader({
           <div onClick={e => e.stopPropagation()} style={{
             position: 'fixed', top: 'max(80px, 10vh)', right: 16, zIndex: 10,
             maxWidth: 'min(90vw, 400px)',
-            borderRadius: 14, padding: '12px 14px',
-            background: dark ? '#1a1a2e' : '#f5f3fa',
-            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 2, padding: '12px 14px',
+            background: panelBg(theme),
+            backdropFilter: 'blur(20px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(140%)',
+            border: `1px solid ${dark ? 'rgba(240,235,226,0.10)' : 'rgba(212,146,58,0.20)'}`,
             boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
             display: 'flex', flexDirection: 'column', gap: 8,
           }}>
@@ -407,7 +495,8 @@ export function Reader({
                 onKeyDown={e => { if (e.key === 'Escape') setShowSearch(false) }}
                 placeholder="搜索全书..."
                 style={{
-                  flex: 1, padding: '8px 12px', borderRadius: 8, fontSize: 13,
+                  flex: 1, padding: '8px 12px', borderRadius: 2, fontSize: 13,
+                  fontFamily: fontDisplay,
                   background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
                   border: `1px solid ${dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
                   color: fg, outline: 'none',
@@ -462,9 +551,9 @@ export function Reader({
             max="200"
             value={brightness}
             onChange={(e) => setBrightness(Number(e.target.value))}
-            style={{ width: 140, accentColor: '#a855f7' }}
+            style={{ width: 140, accentColor: '#d4923a' }}
           />
-          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, textAlign: 'center' }}>
+          <div style={{ color: dark ? '#d4923a' : '#8a6030', fontSize: 11, textAlign: 'center', fontFamily: 'monospace' }}>
             {brightness}%
           </div>
         </div>
@@ -488,7 +577,7 @@ export function Reader({
 
       <MarkersPanel
         visible={showMarkers}
-        dark={dark}
+        theme={theme}
         bookmarks={bookmarks}
         highlights={highlights}
         markerTab={markerTab}
@@ -514,7 +603,7 @@ export function Reader({
         visible={showSidebar}
         toc={toc}
         currentHref={currentHref}
-        dark={dark}
+        theme={theme}
         onNavigate={onNavigate}
         onClose={() => setShowSidebar(false)}
       />

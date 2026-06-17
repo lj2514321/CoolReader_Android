@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { saveAIConfig } from '../utils/db'
 import type { AIConfig } from '../types'
-import type { CSSProperties } from 'react'
+import { colors } from '../utils/styles'
 
-const inputStyle: CSSProperties = {
-  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13,
-  outline: 'none', width: '100%', boxSizing: 'border-box',
+const inputStyle = {
+  background: 'rgba(240,235,226,0.05)',
+  border: `1px solid ${colors.border}`,
+  borderRadius: 10, padding: '10px 14px',
+  color: colors.text, fontSize: 13,
+  outline: 'none', width: '100%', boxSizing: 'border-box' as const,
 }
 
 interface AISettingsProps {
@@ -59,6 +61,12 @@ export function AISettings({ config, onConfigChange }: AISettingsProps) {
     setForm({ apiUrl: 'https://api.openai.com/v1', apiKey: '', model: 'gpt-4o-mini' })
   }
 
+  const btnStyle = {
+    background: 'rgba(240,235,226,0.08)', border: `1px solid ${colors.border}`,
+    borderRadius: 10, padding: '10px 20px', color: colors.text, fontSize: 13,
+    fontWeight: 600 as const, cursor: 'pointer', transition: 'all 0.15s',
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
@@ -73,16 +81,15 @@ export function AISettings({ config, onConfigChange }: AISettingsProps) {
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
         <button onClick={handleTest} style={btnStyle}>测试连接</button>
         <button onClick={handleSave} style={btnStyle}>保存配置</button>
-        {config && <button onClick={handleClear} style={{ ...btnStyle, background: 'rgba(220,38,38,0.3)' }}>清除配置</button>}
+        {config && <button onClick={handleClear} style={{
+          ...btnStyle,
+          background: 'rgba(192,84,74,0.20)',
+          borderColor: 'rgba(192,84,74,0.40)',
+          color: colors.red,
+        }}>清除配置</button>}
       </div>
 
-      {testResult && <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginBottom: 12 }}>{testResult}</div>}
+      {testResult && <div style={{ color: colors.textMuted, fontSize: 12, marginBottom: 12 }}>{testResult}</div>}
     </div>
   )
-}
-
-const btnStyle: CSSProperties = {
-  background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: 10, padding: '10px 20px', color: '#fff', fontSize: 13,
-  fontWeight: 600, cursor: 'pointer',
 }

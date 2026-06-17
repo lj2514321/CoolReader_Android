@@ -1,0 +1,147 @@
+/**
+ * glass.css — CoolReader Android 玻璃质感规范
+ *
+ * 原则：glassmorphism 只用于浮动面板和弹窗背景。
+ * 书架格子、统计卡片、底部 Tab 导航 — 全都去掉 glass，
+ * 改为实色微透明底（--cr-bg-raised / --cr-paper-dim）。
+ *
+ * 模糊半径从 24px → 12px（移动端 WebView 性能更佳）。
+ */
+
+/* ── 浮动面板玻璃 ────────────────────────── */
+/* --cr-glass-bg 由 App.tsx 根据当前背景预设动态注入 */
+.cr-glass {
+  background: var(--cr-glass-bg, rgba(28, 23, 16, 0.72));
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid var(--cr-border);
+  border-radius: var(--cr-radius-md);
+  box-shadow: var(--cr-shadow-md);
+}
+
+/* 浅色变体（用于 Reader 内弹出面板，与纸黄背景协调） */
+.cr-glass-light {
+  background: rgba(244, 234, 213, 0.85);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid rgba(212, 146, 58, 0.20);
+  border-radius: var(--cr-radius-md);
+  box-shadow: var(--cr-shadow-md);
+}
+
+/* ── 琥珀辉光按钮（Tab / 导航激活态） ───── */
+.cr-pill-active {
+  background: var(--cr-amber-dim);
+  border: 1px solid var(--cr-border-amber);
+  border-radius: var(--cr-radius-pill);
+  box-shadow: var(--cr-shadow-amber);
+  color: var(--cr-amber);
+}
+
+.cr-pill {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--cr-radius-pill);
+  color: var(--cr-text-muted);
+  transition: background 0.2s var(--cr-ease),
+              color 0.2s var(--cr-ease),
+              border-color 0.2s var(--cr-ease),
+              box-shadow 0.2s var(--cr-ease);
+}
+
+.cr-pill:hover:not(.cr-pill-active) {
+  background: rgba(240, 235, 226, 0.08);
+  color: var(--cr-text);
+}
+
+/* ── 实色卡片（书架格子 / 统计卡） ───────── */
+.cr-card {
+  background: var(--cr-bg-raised);
+  border: 1px solid var(--cr-border);
+  border-radius: var(--cr-radius-md);
+  box-shadow: var(--cr-shadow-sm);
+  transition: transform 0.2s var(--cr-ease-spring),
+              box-shadow 0.2s var(--cr-ease);
+}
+
+.cr-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--cr-shadow-md);
+}
+
+/* ── 列表项 / Setting 行 ─────────────────── */
+.cr-row {
+  background: var(--cr-bg-raised);
+  border: 1px solid var(--cr-border);
+  border-radius: var(--cr-radius-sm);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: background 0.15s var(--cr-ease);
+}
+
+.cr-row:hover {
+  background: rgba(240, 235, 226, 0.06);
+}
+
+.cr-row:active {
+  background: rgba(240, 235, 226, 0.04);
+}
+
+/* ── 分割线 ─────────────────────────────── */
+.cr-divider {
+  height: 1px;
+  background: var(--cr-border);
+  margin: 12px 0;
+}
+
+/* ── 油灯氛围 ────────────────────────────── */
+/* 中心亮、边缘暗的径向灯光（覆盖在背景之上） */
+.cr-lamp-light {
+  position: relative;
+}
+.cr-lamp-light::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 30%,
+    rgba(232, 160, 74, 0.10) 0%,
+    rgba(232, 160, 74, 0.04) 30%,
+    transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+.cr-lamp-light > * { position: relative; z-index: 1; }
+
+/* 边缘暗角（强调书房/夜晚感） */
+.cr-vignette {
+  position: relative;
+}
+.cr-vignette::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center,
+    transparent 50%,
+    rgba(5, 3, 2, 0.6) 100%);
+  pointer-events: none;
+}
+
+/* ── 火苗进度（签名元素） ────────────────── */
+.cr-flame-progress {
+  position: relative;
+  height: 4px;
+  background: rgba(240, 235, 226, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.cr-flame-progress > .flame {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: linear-gradient(90deg,
+    var(--cr-flame) 0%,
+    var(--cr-lamp) 60%,
+    var(--cr-amber) 100%);
+  box-shadow: 0 0 8px rgba(255, 123, 58, 0.6);
+  border-radius: 2px;
+  transition: width 0.4s var(--cr-ease);
+}

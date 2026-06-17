@@ -5,8 +5,8 @@ import type { WebDAVConfig, SyncProgressEvent } from '../types'
 import type { CSSProperties } from 'react'
 
 const inputStyle: CSSProperties = {
-  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13,
+  background: 'rgba(240,235,226,0.06)', border: '1px solid rgba(240,235,226,0.12)',
+  borderRadius: 10, padding: '10px 14px', color: '#f0ebe2', fontSize: 13,
   outline: 'none', width: '100%', boxSizing: 'border-box',
 }
 
@@ -82,24 +82,30 @@ export function SyncSettings({ config, onConfigChange }: SyncSettingsProps) {
         <button onClick={handleSave} style={btnStyle}>保存配置</button>
         {config && <button onClick={handleClear} style={{ ...btnStyle, background: 'rgba(220,38,38,0.3)' }}>清除配置</button>}
         {config && (
-          <button onClick={handleSync} disabled={syncing} style={{ ...btnStyle, background: 'linear-gradient(135deg, #667eea, #764ba2)', opacity: syncing ? 0.5 : 1 }}>
+          <button onClick={handleSync} disabled={syncing} style={{
+    ...btnStyle,
+    background: syncing ? 'rgba(212,146,58,0.5)' : '#d4923a',
+    color: syncing ? 'rgba(240,235,226,0.6)' : '#0a0807',
+    fontWeight: 700,
+    boxShadow: syncing ? 'none' : '0 4px 16px rgba(212,146,58,0.35)',
+  }}>
             {syncing ? '同步中...' : '全量同步'}
           </button>
         )}
       </div>
 
-      {testResult && <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginBottom: 12 }}>{testResult}</div>}
+      {testResult && <div style={{ color: 'rgba(240,235,226,0.6)', fontSize: 12, marginBottom: 12 }}>{testResult}</div>}
 
       {progress && (
         <div ref={progressRef} style={{
           borderRadius: 10, padding: 12,
-          background: 'rgba(99,102,241,0.12)',
-          border: '1px solid rgba(99,102,241,0.2)',
+          background: 'rgba(212,146,58,0.10)',
+          border: '1px solid rgba(212,146,58,0.20)',
         }}>
-          <div style={{ color: '#fff', fontSize: 12, marginBottom: 6 }}>{progress.message}</div>
+          <div style={{ color: '#f0ebe2', fontSize: 12, marginBottom: 6 }}>{progress.message}</div>
           {progress.total && progress.total > 0 && (
-            <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
-              <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #667eea, #764ba2)', borderRadius: 2, transition: 'width 0.3s' }} />
+            <div style={{ height: 4, borderRadius: 2, background: 'rgba(240,235,226,0.08)', overflow: 'hidden' }}>
+              <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #d4923a, rgba(180,110,40,0.8))', borderRadius: 2, transition: 'width 0.3s', boxShadow: '0 0 8px rgba(212,146,58,0.4)' }} />
             </div>
           )}
         </div>
@@ -109,7 +115,7 @@ export function SyncSettings({ config, onConfigChange }: SyncSettingsProps) {
 }
 
 const btnStyle: CSSProperties = {
-  background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: 10, padding: '10px 20px', color: '#fff', fontSize: 13,
-  fontWeight: 600, cursor: 'pointer',
+  background: 'rgba(240,235,226,0.08)', border: '1px solid rgba(240,235,226,0.12)',
+  borderRadius: 10, padding: '10px 20px', color: '#f0ebe2', fontSize: 13,
+  fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
 }

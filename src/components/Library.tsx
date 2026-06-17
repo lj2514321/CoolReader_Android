@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import type { BookRecord } from '../utils/db'
-import type { WebDAVConfig, AIConfig } from '../types'
+import type { WebDAVConfig, AIConfig, CustomBgConfig } from '../types'
 import { loadSetting } from '../utils/db'
-import { bgPresets, defGrad } from '../utils/styles'
+import { bgPresets, defGrad, getGlassBg } from '../utils/styles'
 import { SidebarNav } from './SidebarNav'
 import { BookShelf } from './BookShelf'
 import { SettingsPage } from './SettingsPage'
@@ -17,7 +17,9 @@ interface LibraryProps {
   onOpenBook: (filePath: string) => void
   onImport: () => void
   onDelete: (filePath: string, deleteFile: boolean) => void
-  onBgChange?: (g: string) => void
+  onBgChange?: (gradient: string, glassBg?: string) => void
+  customBg?: CustomBgConfig | null
+  onCustomBgChange?: (config: CustomBgConfig) => void
   webdavConfig?: WebDAVConfig | null
   onWebDAVConfigChange?: (config: WebDAVConfig | null) => void
   aiConfig?: AIConfig | null
@@ -28,12 +30,12 @@ interface LibraryProps {
 
 type LibPage = 'books' | 'stats' | 'settings'
 
-export function Library({ books, readingTime, progressRecords, onOpenBook, onImport, onDelete, onBgChange, webdavConfig, onWebDAVConfigChange, aiConfig, onAIConfigChange, startupBehavior, onStartupBehaviorChange }: LibraryProps) {
+export function Library({ books, readingTime, progressRecords, onOpenBook, onImport, onDelete, onBgChange, customBg, onCustomBgChange, webdavConfig, onWebDAVConfigChange, aiConfig, onAIConfigChange, startupBehavior, onStartupBehaviorChange }: LibraryProps) {
   const [libPage, setLibPage] = useState<LibPage>('books')
   const [transition, setTransition] = useState<'idle' | 'out' | 'in'>('idle')
   const [direction, setDirection] = useState<'left' | 'right'>('right')
   const transRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const [bgKey, setBgKey] = useState('deepPurple')
+  const [bgKey, setBgKey] = useState('warmBlack')
   const [settingsResetKey, setSettingsResetKey] = useState(0)
   const [readingGoal, setReadingGoal] = useState(0)
 
@@ -44,10 +46,10 @@ export function Library({ books, readingTime, progressRecords, onOpenBook, onImp
     ]).then(([bg, goal]) => {
       if (bg) {
         setBgKey(bg)
-        const g = bgPresets.find((b) => b.key === bg)?.gradient || defGrad
-        onBgChange?.(g)
+        const preset = bgPresets.find((b) => b.key === bg)
+        onBgChange?.(preset?.gradient || defGrad, preset?.glassBg)
       } else {
-        onBgChange?.(defGrad)
+        onBgChange?.(defGrad, getGlassBg('warmBlack'))
       }
       if (goal) setReadingGoal(Number(goal))
     }).catch((e) => console.warn('[Library]', e))
@@ -87,7 +89,7 @@ export function Library({ books, readingTime, progressRecords, onOpenBook, onImp
 
   const handlePresetChange = (key: string, gradient: string) => {
     setBgKey(key)
-    onBgChange?.(gradient)
+    onBgChange?.(gradient, getGlassBg(key))
   }
 
   return (
@@ -98,8 +100,14 @@ export function Library({ books, readingTime, progressRecords, onOpenBook, onImp
       position: 'relative',
       overflow: 'hidden',
     }}>
-      <div style={{ position: 'absolute', top: '0%', left: '20%', width: '60%', height: '60%', background: 'radial-gradient(ellipse, rgba(99,102,241,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', bottom: '0%', right: '0%', width: '50%', height: '40%', background: 'radial-gradient(ellipse, rgba(168,85,247,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: '0%', left: '20%', width: '60%', height: '60%', background: 'radial-gradient(ellipse, rgba(232,160,74,0.10) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', bottom: '0%', right: '0%', width: '50%', height: '40%', background: 'radial-gradient(ellipse, rgba(232,160,74,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+      {/* 边缘暗角 — 书房/夜晚感 */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
+        background: 'radial-gradient(ellipse at center, transparent 55%, rgba(5, 3, 2, 0.45) 100%)',
+      }} />
 
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden', zIndex: 1, overscrollBehavior: 'none' }}>
         <div style={{
@@ -125,7 +133,7 @@ export function Library({ books, readingTime, progressRecords, onOpenBook, onImp
           pointerEvents: transition !== 'idle' || libPage !== 'settings' ? 'none' : 'auto',
           ...pageAnim('settings'),
         }}>
-          <SettingsPage bgKey={bgKey} onPresetChange={handlePresetChange} resetKey={settingsResetKey} visible={libPage === 'settings'} webdavConfig={webdavConfig ?? null} onWebDAVConfigChange={onWebDAVConfigChange} aiConfig={aiConfig ?? null} onAIConfigChange={onAIConfigChange} readingGoal={readingGoal} onReadingGoalChange={setReadingGoal} startupBehavior={startupBehavior} onStartupBehaviorChange={onStartupBehaviorChange} />
+          <SettingsPage bgKey={bgKey} onPresetChange={handlePresetChange} resetKey={settingsResetKey} visible={libPage === 'settings'} customBg={customBg ?? null} onCustomBgChange={onCustomBgChange} webdavConfig={webdavConfig ?? null} onWebDAVConfigChange={onWebDAVConfigChange} aiConfig={aiConfig ?? null} onAIConfigChange={onAIConfigChange} readingGoal={readingGoal} onReadingGoalChange={setReadingGoal} startupBehavior={startupBehavior} onStartupBehaviorChange={onStartupBehaviorChange} />
         </div>
       </div>
 

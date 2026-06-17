@@ -1,11 +1,17 @@
+import type { BookFormat, WebDAVConfig, AIConfig, Bookmark, Highlight } from '../types'
+import { logger } from './logger'
+
 const DB_NAME = 'coolreader'
-const DB_VERSION = 4
+const DB_VERSION = 5
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION)
-    req.onupgradeneeded = () => {
+    req.onupgradeneeded = (event) => {
       const db = req.result
+      const oldVersion = event.oldVersion
+      const tx = req.transaction
+
       if (!db.objectStoreNames.contains('books')) {
         db.createObjectStore('books', { keyPath: 'filePath' })
       }
@@ -33,6 +39,39 @@ function openDB(): Promise<IDBDatabase> {
         const brt = db.createObjectStore('bookReadingTime', { keyPath: ['filePath', 'date'] })
         brt.createIndex('date', 'date', { unique: false })
       }
+
+      // v4 -> v5: add format to books, location + chapterLabel to progress.
+      // Existing epub records are migrated losslessly (location == cfi when not set).
+      if (oldVersion < 5 && tx) {
+        if (db.objectStoreNames.contains('books')) {
+          const bookStore = tx.objectStore('books')
+          bookStore.openCursor().onsuccess = (e) => {
+            const cursor = (e.target as IDBRequest).result
+            if (cursor) {
+              const book = cursor.value as BookRecord & { format?: BookFormat }
+              if (!book.format) {
+                book.format = 'epub'
+                cursor.update(book)
+              }
+              cursor.continue()
+            }
+          }
+        }
+        if (db.objectStoreNames.contains('progress')) {
+          const progressStore = tx.objectStore('progress')
+          progressStore.openCursor().onsuccess = (e) => {
+            const cursor = (e.target as IDBRequest).result
+            if (cursor) {
+              const p = cursor.value as ProgressRecord & { cfi?: string; location?: string; chapterLabel?: string }
+              if (p.cfi && !p.location) {
+                p.location = p.cfi
+                cursor.update(p)
+              }
+              cursor.continue()
+            }
+          }
+        }
+      }
     }
     req.onsuccess = () => resolve(req.result)
     req.onerror = () => reject(req.error)
@@ -43,62 +82,85 @@ function store(db: IDBDatabase, name: string, mode: IDBTransactionMode = 'readon
   return db.transaction(name, mode).objectStore(name)
 }
 
+function requestPromise<T>(req: IDBRequest<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    req.onsuccess = () => resolve(req.result)
+    req.onerror = () => reject(req.error)
+  })
+}
+
 export interface BookRecord {
   filePath: string
   title: string
   author: string
   cover?: string
+  /** Format of the underlying file. Defaults to 'epub' on mobile target. */
+  format?: BookFormat
+  /** Timestamp of last open, used to sort "recently read" lists and resume-on-startup. */
+  lastOpenedAt?: number
 }
 
-export interface ProgressRecord {
+export interface CoverRecord {
   filePath: string
-  progress: number
-  cfi: string
-  index: number
-  updatedAt: number
+  data: ArrayBuffer
+  mime?: string
 }
 
 export async function saveBook(book: BookRecord): Promise<void> {
   const db = await openDB()
-  store(db, 'books', 'readwrite').put(book)
+  await requestPromise(store(db, 'books', 'readwrite').put(book))
+}
+
+export async function updateLastOpenedAt(filePath: string): Promise<void> {
+  const db = await openDB()
+  const record = await requestPromise<BookRecord | undefined>(
+    store(db, 'books').get(filePath)
+  )
+  if (record) {
+    record.lastOpenedAt = Date.now()
+    await requestPromise(store(db, 'books', 'readwrite').put(record))
+  }
 }
 
 export async function deleteBook(filePath: string): Promise<void> {
   const db = await openDB()
-  store(db, 'books', 'readwrite').delete(filePath)
-  store(db, 'progress', 'readwrite').delete(filePath)
-  store(db, 'bookData', 'readwrite').delete(filePath)
-  // Cascade-delete bookmarks
-  const bmRecords: BookmarkRecord[] = await new Promise((resolve) => {
-    const req = store(db, 'bookmarks').index('filePath').getAll(filePath)
-    req.onsuccess = () => resolve(req.result)
-    req.onerror = () => resolve([])
-  })
-  if (bmRecords.length > 0) {
-    const bmTx = db.transaction('bookmarks', 'readwrite')
-    await Promise.all(bmRecords.map(r => requestPromise(bmTx.objectStore('bookmarks').delete(r.id!))))
-  }
-  // Cascade-delete highlights
-  const hlRecords: HighlightRecord[] = await new Promise((resolve) => {
-    const req = store(db, 'highlights').index('filePath').getAll(filePath)
-    req.onsuccess = () => resolve(req.result)
-    req.onerror = () => resolve([])
-  })
-  if (hlRecords.length > 0) {
-    const hlTx = db.transaction('highlights', 'readwrite')
-    await Promise.all(hlRecords.map(r => requestPromise(hlTx.objectStore('highlights').delete(r.id!))))
-  }
-  // Cascade-delete bookReadingTime for this filePath
-  const brtTx = db.transaction('bookReadingTime', 'readwrite')
-  const brtReq = brtTx.objectStore('bookReadingTime').openCursor()
-  brtReq.onsuccess = () => {
-    const cursor = brtReq.result
-    if (cursor) {
-      const record = cursor.value as { filePath: string }
-      if (record.filePath === filePath) cursor.delete()
-      cursor.continue()
-    }
-  }
+  // Cascade-delete using indexed ranges for performance — same shape as source v1.5.4.
+  await Promise.all([
+    requestPromise(store(db, 'books', 'readwrite').delete(filePath)),
+    requestPromise(store(db, 'progress', 'readwrite').delete(filePath)),
+    requestPromise(store(db, 'bookData', 'readwrite').delete(filePath)),
+    (async () => {
+      const bmRecords = await requestPromise<Bookmark[]>(
+        store(db, 'bookmarks').index('filePath').getAll(filePath)
+      )
+      if (bmRecords.length > 0) {
+        const bmTx = db.transaction('bookmarks', 'readwrite')
+        await Promise.all(bmRecords.map(r => requestPromise(bmTx.objectStore('bookmarks').delete(r.id!))))
+      }
+    })(),
+    (async () => {
+      const hlRecords = await requestPromise<Highlight[]>(
+        store(db, 'highlights').index('filePath').getAll(filePath)
+      )
+      if (hlRecords.length > 0) {
+        const hlTx = db.transaction('highlights', 'readwrite')
+        await Promise.all(hlRecords.map(r => requestPromise(hlTx.objectStore('highlights').delete(r.id!))))
+      }
+    })(),
+    (async () => {
+      // Source v1.5.4 fix: use IDBKeyRange on [filePath, '']..[filePath, '￿']
+      // instead of walking the whole table with a cursor. Order keys by [filePath, date]
+      // so a lexicographic range cleanly captures every date string for this path.
+      const brtRange = IDBKeyRange.bound([filePath, ''], [filePath, '￿'])
+      const brtRecords = await requestPromise<BookReadingTimeRecord[]>(
+        store(db, 'bookReadingTime').getAll(brtRange)
+      )
+      if (brtRecords.length > 0) {
+        const brtTx = db.transaction('bookReadingTime', 'readwrite')
+        await Promise.all(brtRecords.map(r => requestPromise(brtTx.objectStore('bookReadingTime').delete([r.filePath, r.date]))))
+      }
+    })(),
+  ])
 }
 
 export async function loadAllBooks(): Promise<BookRecord[]> {
@@ -110,19 +172,74 @@ export async function loadAllBooks(): Promise<BookRecord[]> {
   })
 }
 
-export async function saveProgress(filePath: string, progress: number, cfi: string, index: number): Promise<void> {
+export async function loadLastOpenedBook(): Promise<BookRecord | null> {
+  const all = await loadAllBooks()
+  if (all.length === 0) return null
+  return all.reduce((best, b) =>
+    !best.lastOpenedAt || (b.lastOpenedAt && b.lastOpenedAt > best.lastOpenedAt) ? b : best,
+    all[0]
+  )
+}
+
+// bookData: store EPUB binary data in IndexedDB (replaces file system)
+export async function saveBookData(filePath: string, data: ArrayBuffer): Promise<void> {
   const db = await openDB()
-  store(db, 'progress', 'readwrite').put({
-    filePath, progress, cfi, index,
-    updatedAt: Date.now(),
+  store(db, 'bookData', 'readwrite').put({ filePath, data })
+}
+
+export async function loadBookData(filePath: string): Promise<ArrayBuffer | null> {
+  const db = await openDB()
+  return new Promise((resolve) => {
+    const req = store(db, 'bookData').get(filePath)
+    req.onsuccess = () => resolve(req.result?.data ?? null)
+    req.onerror = () => resolve(null)
   })
 }
 
-export async function loadProgress(filePath: string): Promise<{ progress: number; cfi: string; index: number } | null> {
+export interface ProgressRecord {
+  filePath: string
+  progress: number
+  cfi: string
+  /** Universal position string. For epub: CFI. For txt/mobi: 'chapterIdx:charOffset'. */
+  location: string
+  index: number
+  chapterLabel?: string
+  updatedAt: number
+}
+
+export async function saveProgress(
+  filePath: string,
+  progress: number,
+  cfi: string,
+  index: number,
+  chapterLabel?: string,
+  location?: string
+): Promise<void> {
+  // Source v1.5.4 fix: only warn when BOTH cfi and location are empty (a txt/mobi
+  // adapter will set location but not cfi; the previous check produced log noise).
+  if (!cfi && !location) logger.warn('[saveProgress] cfi and location are both empty, index:', index)
+  const db = await openDB()
+  await requestPromise(store(db, 'progress', 'readwrite').put({
+    filePath, progress, cfi, location: location ?? cfi, index, chapterLabel,
+    updatedAt: Date.now(),
+  }))
+}
+
+export async function loadProgress(filePath: string): Promise<{
+  progress: number
+  cfi: string
+  location?: string
+  index: number
+  chapterLabel?: string
+} | null> {
   const db = await openDB()
   return new Promise((resolve) => {
     const req = store(db, 'progress').get(filePath)
-    req.onsuccess = () => resolve(req.result ?? null)
+    req.onsuccess = () => {
+      const r = req.result
+      if (!r) return resolve(null)
+      resolve(r)
+    }
     req.onerror = () => resolve(null)
   })
 }
@@ -143,7 +260,7 @@ export interface ReadingTimeRecord {
 
 export async function saveReadingTime(date: string, seconds: number): Promise<void> {
   const db = await openDB()
-  store(db, 'readingTime', 'readwrite').put({ date, seconds })
+  await requestPromise(store(db, 'readingTime', 'readwrite').put({ date, seconds }))
 }
 
 export async function loadReadingTime(date: string): Promise<number> {
@@ -197,21 +314,6 @@ export async function loadBookReadingTimeRange(from: string, to: string): Promis
   })
 }
 
-// bookData: store EPUB binary data in IndexedDB (replaces file system)
-export async function saveBookData(filePath: string, data: ArrayBuffer): Promise<void> {
-  const db = await openDB()
-  store(db, 'bookData', 'readwrite').put({ filePath, data })
-}
-
-export async function loadBookData(filePath: string): Promise<ArrayBuffer | null> {
-  const db = await openDB()
-  return new Promise((resolve) => {
-    const req = store(db, 'bookData').get(filePath)
-    req.onsuccess = () => resolve(req.result?.data ?? null)
-    req.onerror = () => resolve(null)
-  })
-}
-
 // settings
 export async function saveSetting(key: string, value: string): Promise<void> {
   const db = await openDB()
@@ -228,8 +330,6 @@ export async function loadSetting(key: string): Promise<string | null> {
 }
 
 // JSON configs stored in settings
-import type { WebDAVConfig, AIConfig } from '../types'
-
 export async function saveWebDAVConfig(config: WebDAVConfig): Promise<void> {
   await saveSetting('webdavConfig', JSON.stringify(config))
 }
@@ -254,24 +354,28 @@ export interface BookmarkRecord {
   id?: number
   filePath: string
   cfi: string
+  /** Universal position string. Mirrors cfi for epub records written before v5. */
+  location?: string
   label: string
   createdAt: number
 }
 
 export async function saveBookmark(bookmark: BookmarkRecord): Promise<void> {
   const db = await openDB()
-  store(db, 'bookmarks', 'readwrite').put(bookmark)
+  await requestPromise(store(db, 'bookmarks', 'readwrite').put(bookmark))
 }
 
 export async function removeBookmark(id: number): Promise<void> {
   const db = await openDB()
-  store(db, 'bookmarks', 'readwrite').delete(id)
+  await requestPromise(store(db, 'bookmarks', 'readwrite').delete(id))
 }
 
 export interface HighlightRecord {
   id?: number
   filePath: string
   cfiRange: string
+  /** Universal position string. Mirrors cfiRange for epub records written before v5. */
+  location?: string
   text: string
   color: string
   note?: string
@@ -280,12 +384,12 @@ export interface HighlightRecord {
 
 export async function saveHighlight(hl: HighlightRecord): Promise<void> {
   const db = await openDB()
-  store(db, 'highlights', 'readwrite').put(hl)
+  await requestPromise(store(db, 'highlights', 'readwrite').put(hl))
 }
 
 export async function removeHighlight(id: number): Promise<void> {
   const db = await openDB()
-  store(db, 'highlights', 'readwrite').delete(id)
+  await requestPromise(store(db, 'highlights', 'readwrite').delete(id))
 }
 
 export async function loadHighlights(filePath: string): Promise<HighlightRecord[]> {
