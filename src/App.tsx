@@ -6,6 +6,7 @@ import { Reader } from './components/Reader'
 import type { WebDAVConfig, AIConfig, CustomBgConfig } from './types'
 import { StatusBar, Style } from '@capacitor/status-bar'
 import { App as CapacitorApp } from '@capacitor/app'
+import { initInstallPrompt } from './utils/mobile'
 
 export default function App() {
   const [books, setBooks] = useState<BookRecord[]>([])
@@ -98,6 +99,11 @@ export default function App() {
 
   useEffect(() => {
     return () => clearTimeout(exitTimerRef.current)
+  }, [])
+
+  // Initialize PWA install prompt listener
+  useEffect(() => {
+    initInstallPrompt()
   }, [])
 
   const [bgGradient, setBgGradient] = useState('linear-gradient(160deg, #0a0807 0%, #13100c 50%, #1c1710 100%)')
@@ -197,15 +203,31 @@ export default function App() {
     document.documentElement.style.setProperty('--cr-glass-bg', effectiveGlassBg)
   }, [effectiveGlassBg])
 
+  // Double-back-to-exit logic
+  const lastBackPressRef = useRef(0)
+  const [exitToast, setExitToast] = useState(false)
+  const exitToastTimerRef = useRef<ReturnType<typeof setTimeout>>()
+
   useEffect(() => {
     const handler = CapacitorApp.addListener('backButton', () => {
       if (readerPath) {
         handleBack()
       } else {
-        CapacitorApp.exitApp()
+        const now = Date.now()
+        if (now - lastBackPressRef.current < 2000) {
+          CapacitorApp.exitApp()
+        } else {
+          lastBackPressRef.current = now
+          setExitToast(true)
+          clearTimeout(exitToastTimerRef.current)
+          exitToastTimerRef.current = setTimeout(() => setExitToast(false), 2000)
+        }
       }
     })
-    return () => handler.remove()
+    return () => {
+      handler.remove()
+      clearTimeout(exitToastTimerRef.current)
+    }
   }, [readerPath, handleBack])
 
   if (readerPath) {
@@ -291,6 +313,17 @@ export default function App() {
       {loading && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, color: '#fff', fontSize: 14 }}>
           加载中...
+        </div>
+      )}
+      {exitToast && (
+        <div style={{
+          position: 'fixed', bottom: 'calc(80px + env(safe-area-inset-bottom, 12px))', left: '50%', transform: 'translateX(-50%)',
+          background: 'rgba(0,0,0,0.85)', color: '#fff', padding: '10px 24px', borderRadius: 8,
+          fontSize: 14, fontFamily: 'system-ui, sans-serif', zIndex: 1000,
+          backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+          animation: 'fadeInUp 0.2s ease',
+        }}>
+          再按一次退出应用
         </div>
       )}
     </div>

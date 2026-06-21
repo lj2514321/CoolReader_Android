@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import type { AIConfig, AIChatMessage } from '../types'
+import { useKeyboard } from '../hooks/useKeyboard'
 
 const _pulseId = '_ai_pulse'
 if (typeof document !== 'undefined' && !document.getElementById(_pulseId)) {
@@ -139,6 +140,7 @@ export function AIPanel({ visible, onClose, config, theme, onGetChapterText, onG
   const [loading, setLoading] = useState(false)
   const [streamingText, setStreamingText] = useState('')
   const msgEndRef = useRef<HTMLDivElement>(null)
+  const { keyboardHeight, isKeyboardVisible } = useKeyboard()
 
   const dark = theme === 'dark'
   const fg = dark ? '#f0ebe2' : '#3d2b1a'
@@ -146,7 +148,7 @@ export function AIPanel({ visible, onClose, config, theme, onGetChapterText, onG
 
   useEffect(() => {
     msgEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, streamingText])
+  }, [messages, streamingText, isKeyboardVisible])
 
   const addMessage = useCallback((msg: AIChatMessage) => {
     setMessages(prev => [...prev, msg])
@@ -213,7 +215,8 @@ export function AIPanel({ visible, onClose, config, theme, onGetChapterText, onG
       {visible && (
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
-          height: '45vh', zIndex: 10,
+          height: isKeyboardVisible ? `calc(45vh + ${keyboardHeight * 0.4}px)` : '45vh',
+          zIndex: 10,
           display: 'flex', flexDirection: 'column',
           ...glass(theme),
           transform: visible ? 'translateY(0)' : 'translateY(100%)',

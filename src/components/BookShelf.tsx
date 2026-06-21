@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useCallback } from 'react'
 import type { BookRecord } from '../utils/db'
 import { colors } from '../utils/styles'
+import { hapticHeavy, hapticLight } from '../utils/mobile'
 
 interface BookShelfProps {
   books: BookRecord[]
@@ -13,6 +14,36 @@ interface BookShelfProps {
 }
 
 type SortKey = 'title' | 'author' | 'recent'
+
+/** 长按 hook — 500ms 触发，触摸移动自动取消 */
+function useLongPress(callback: () => void, ms = 500) {
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const posRef = useRef<{ x: number; y: number } | null>(null)
+
+  const start = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0]
+    posRef.current = { x: touch.clientX, y: touch.clientY }
+    timerRef.current = setTimeout(() => {
+      callback()
+      timerRef.current = null
+    }, ms)
+  }, [callback, ms])
+
+  const move = useCallback((e: React.TouchEvent) => {
+    if (!posRef.current) return
+    const touch = e.touches[0]
+    const dx = Math.abs(touch.clientX - posRef.current.x)
+    const dy = Math.abs(touch.clientY - posRef.current.y)
+    if (dx > 10 || dy > 10) cancel()
+  }, [])
+
+  const cancel = useCallback(() => {
+    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null }
+    posRef.current = null
+  }, [])
+
+  return { onTouchStart: start, onTouchMove: move, onTouchEnd: cancel, onTouchCancel: cancel }
+}
 
 /* 暖墨色封面渐变 — 模拟老书纸面 */
 const coverGradients = [
@@ -81,6 +112,8 @@ export function BookShelf({ books, readingTime, readingGoal, progressRecords, on
   const [confirmPath, setConfirmPath] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('title')
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const longPressPos = useRef<{ x: number; y: number } | null>(null)
 
   const progressMap = useMemo(() => new Map(progressRecords.map(p => [p.filePath, p])), [progressRecords])
 
@@ -374,12 +407,35 @@ export function BookShelf({ books, readingTime, readingGoal, progressRecords, on
               const prog = progressMap.get(book.filePath)
               return (
                 <div key={book.filePath}
-                  onClick={() => onOpenBook(book.filePath)}
+                  onClick={() => { hapticLight(); onOpenBook(book.filePath) }}
+                  onTouchStart={e => {
+                    const touch = e.touches[0]
+                    longPressPos.current = { x: touch.clientX, y: touch.clientY }
+                    longPressTimer.current = setTimeout(() => {
+                      hapticHeavy()
+                      setConfirmPath(book.filePath)
+                      longPressTimer.current = null
+                    }, 500)
+                  }}
+                  onTouchMove={e => {
+                    if (!longPressPos.current) return
+                    const touch = e.touches[0]
+                    if (Math.abs(touch.clientX - longPressPos.current.x) > 10 || Math.abs(touch.clientY - longPressPos.current.y) > 10) {
+                      if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
+                      longPressPos.current = null
+                    }
+                  }}
+                  onTouchEnd={() => {
+                    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
+                    longPressPos.current = null
+                  }}
                   style={{
                     position: 'relative',
                     cursor: 'pointer',
                     width: '100%',
                     maxWidth: 110,
+                    WebkitUserSelect: 'none',
+                    userSelect: 'none',
                   }}
                 >
                   {/* Cover with spine shadow */}

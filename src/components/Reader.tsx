@@ -7,6 +7,8 @@ import { Sidebar } from './Sidebar'
 import { LayoutPanel } from './LayoutPanel'
 import { MarkersPanel } from './MarkersPanel'
 import { SelectionToolbar } from './SelectionToolbar'
+import { NoteDialog } from './NoteDialog'
+import { acquireWakeLock, releaseWakeLock, lockPortrait, unlockOrientation, hapticLight, hapticMedium, onAppStateChange, enableScreenshotPrevention, disableScreenshotPrevention } from '../utils/mobile'
 
 interface ReaderProps {
   filePath: string | null
@@ -120,8 +122,8 @@ export function Reader({
 
   const swipeHandlers = useSwipe({
     threshold: 50,
-    onSwipeLeft: () => { nextRef.current() },
-    onSwipeRight: () => { prevRef.current() },
+    onSwipeLeft: () => { hapticMedium(); nextRef.current() },
+    onSwipeRight: () => { hapticMedium(); prevRef.current() },
     enabled: layout.flow !== 'scrolled-doc',
   })
 
@@ -138,6 +140,36 @@ export function Reader({
       onLoad(filePath)
     }
   }, [filePath, onLoad])
+
+  // ─── Mobile: Wake Lock + Screen Orientation + App Lifecycle + Screenshot Prevention ───
+  useEffect(() => {
+    if (!filePath) return
+
+    // Acquire wake lock to prevent screen from dimming during reading
+    acquireWakeLock()
+
+    // Lock to portrait orientation for better reading experience
+    lockPortrait()
+
+    // Enable screenshot prevention for content protection
+    enableScreenshotPrevention()
+
+    // Handle app lifecycle: release/reacquire wake lock on background/foreground
+    const removeListener = onAppStateChange((isActive) => {
+      if (isActive) {
+        acquireWakeLock()
+      } else {
+        releaseWakeLock()
+      }
+    })
+
+    return () => {
+      releaseWakeLock()
+      unlockOrientation()
+      disableScreenshotPrevention()
+      removeListener()
+    }
+  }, [filePath])
 
   useEffect(() => {
     const el = containerRef.current
@@ -246,8 +278,8 @@ export function Reader({
 
     const x = e.clientX - e.currentTarget.getBoundingClientRect().left
     const w = e.currentTarget.getBoundingClientRect().width
-    if (x < w * 0.22) { prevRef.current(); return }
-    if (x > w * 0.78) { nextRef.current(); return }
+    if (x < w * 0.22) { hapticLight(); prevRef.current(); return }
+    if (x > w * 0.78) { hapticLight(); nextRef.current(); return }
 
     setShowUI(v => !v)
     clearTimeout(hideTimer.current)
@@ -325,7 +357,7 @@ export function Reader({
           display: 'flex', alignItems: 'center', gap: 8,
           padding: '4px 6px',
         }}>
-          <button onClick={onPrev} style={{...btn(fg), minWidth: 44, minHeight: 44}}>
+          <button onClick={() => { hapticLight(); onPrev() }} style={{...btn(fg), minWidth: 44, minHeight: 44}}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={fg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
 
@@ -358,7 +390,7 @@ export function Reader({
             <span style={{ fontSize: 11, fontWeight: 600, color: dark ? AMBER : '#8a6a30', fontFamily: fontDisplay, minWidth: 32, textAlign: 'right' }}>{progress}%</span>
           </div>
 
-          <button onClick={onNext} style={{...btn(fg), minWidth: 44, minHeight: 44}}>
+          <button onClick={() => { hapticLight(); onNext() }} style={{...btn(fg), minWidth: 44, minHeight: 44}}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={fg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
         </div>
@@ -607,6 +639,8 @@ export function Reader({
         onNavigate={onNavigate}
         onClose={() => setShowSidebar(false)}
       />
+
+      <NoteDialog />
     </div>
   )
 }

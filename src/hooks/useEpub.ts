@@ -5,6 +5,7 @@ import { generateCustomThemeCSS } from '../utils/customTheme'
 import { applyPageAnimation } from '../utils/animation'
 import { loadProgress, saveProgress, loadReadingTime, loadSetting, saveSetting, saveReadingTime as persistReadingTimeToDB, saveBookReadingTime as persistBookReadingTime, loadBookReadingTime as loadBookReadingTimeFromDB, loadBookData, saveBookmark, removeBookmark, loadBookmarks as loadBookmarksFromDB, saveHighlight, removeHighlight as removeHighlightFromDB, loadHighlights as loadHighlightsFromDB, updateLastOpenedAt } from '../utils/db'
 import { getFormatFromPath } from '../utils/formatDetection'
+import { showNoteDialog } from '../components/NoteDialog'
 import { useSearch } from './useSearch'
 
 export function useEpub() {
@@ -301,18 +302,22 @@ export function useEpub() {
   }, [])
 
   const goNext = useCallback(async () => {
-    await renditionRef.current?.next()
+    const rendition = renditionRef.current
+    if (!rendition) return
+    await rendition.next()
     const animMode = layoutRef.current.animationMode || 'slide'
     const reducedMotion = layoutRef.current.reducedMotion || false
-    applyPageAnimation(renditionRef.current, 'next', animMode, reducedMotion, () => {
+    applyPageAnimation(rendition, 'next', animMode, reducedMotion, () => {
       requestAnimationFrame(syncRef.current)
     })
   }, [])
   const goPrev = useCallback(async () => {
-    await renditionRef.current?.prev()
+    const rendition = renditionRef.current
+    if (!rendition) return
+    await rendition.prev()
     const animMode = layoutRef.current.animationMode || 'slide'
     const reducedMotion = layoutRef.current.reducedMotion || false
-    applyPageAnimation(renditionRef.current, 'prev', animMode, reducedMotion, () => {
+    applyPageAnimation(rendition, 'prev', animMode, reducedMotion, () => {
       requestAnimationFrame(syncRef.current)
     })
   }, [])
@@ -451,7 +456,7 @@ export function useEpub() {
     if (!info) return
     const fp = currentFilePathRef.current || ''
     if (!fp) return
-    const note = prompt('输入笔记（可选）：') || undefined
+    const note = (await showNoteDialog()) || undefined
     const hl: Highlight = { filePath: fp, cfiRange: info.cfiRange, text: info.text, color, note, createdAt: Date.now() }
     await saveHighlight(hl)
     setHighlights(prev => [...prev, { ...hl, id: Date.now() }])
